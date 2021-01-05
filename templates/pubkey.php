@@ -48,6 +48,8 @@ $owner = $this->get('pubkey')->owner;
 		<dl>
 			<dt>Key data</dt>
 			<dd><pre><?php out($this->get('pubkey')->export())?></pre></dd>
+			<dt>Creation Date</dt>
+			<dd><?php out($this->get('pubkey')->format_creation_date()) ?></dd>
 			<dt>Key size</dt>
 			<dd><?php out($this->get('pubkey')->keysize)?></dd>
 			<dt>Fingerprint (MD5)</dt>

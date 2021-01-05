@@ -21,6 +21,8 @@
 	<dl class="panel-body">
 		<dt>Key data</dt>
 		<dd><pre><?php out($pubkey->export())?></pre></dd>
+		<dt>Creation Date</dt>
+		<dd><?php out($pubkey->format_creation_date()) ?></dd>
 		<dt>Key size</dt>
 		<dd><?php out($pubkey->keysize)?></dd>
 		<dt>Fingerprint (MD5)</dt>

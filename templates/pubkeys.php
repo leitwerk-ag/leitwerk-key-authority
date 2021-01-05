@@ -59,6 +59,7 @@
 	<thead>
 		<tr>
 			<th class="fingerprint">Fingerprint</th>
+			<th>Creation Date</th>
 			<th>Type</th>
 			<th>Size</th>
 			<th>Comment</th>
@@ -76,6 +77,7 @@
 					<span class="fingerprint_sha256"><?php out($pubkey->fingerprint_sha256)?></span>
 				</a>
 			</td>
+			<td><?php out($pubkey->format_creation_date()) ?></td>
 			<td class="nowrap"><?php out($pubkey->type)?></td>
 			<td<?php if($pubkey->keysize < 4095) out(' class="danger"', ESC_NONE)?>><?php out($pubkey->keysize)?></td>
 			<td><?php out($pubkey->comment)?></td>

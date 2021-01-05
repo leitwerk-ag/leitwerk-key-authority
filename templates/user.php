@@ -40,6 +40,7 @@
 					<th>Type</th>
 					<th class="fingerprint">Fingerprint</th>
 					<th></th>
+					<th>Creation Date</th>
 					<th>Size</th>
 					<th>Comment</th>
 				</tr>
@@ -58,6 +59,7 @@
 						<?php if(count($key->list_signatures()) > 0) { ?><a href="<?php outurl('/pubkeys/'.urlencode($key->id).'#sig')?>"><span class="glyphicon glyphicon-pencil" title="Signed key"></span></a><?php } ?>
 						<?php if(count($key->list_destination_rules()) > 0) { ?><a href="<?php outurl('/pubkeys/'.urlencode($key->id).'#dest')?>"><span class="glyphicon glyphicon-pushpin" title="Destination-restricted"></span></a><?php } ?>
 					</td>
+					<td><?php out($key->format_creation_date()) ?></td>
 					<td><?php out($key->keysize) ?></td>
 					<td><?php out($key->comment) ?></td>
 				</tr>
