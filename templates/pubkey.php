@@ -38,13 +38,18 @@ $owner = $this->get('pubkey')->owner;
 <?php if($this->get('user_is_owner') || $this->get('admin')) { ?>
 <ul class="nav nav-tabs">
 	<li><a href="#info" data-toggle="tab">Information</a></li>
-	<li><a href="#sig" data-toggle="tab">Key signing</a></li>
-	<li><a href="#dest" data-toggle="tab">Destination restrictions</a></li>
+	<?php if (!$this->get('pubkey')->deleted) { ?>
+		<li><a href="#sig" data-toggle="tab">Key signing</a></li>
+		<li><a href="#dest" data-toggle="tab">Destination restrictions</a></li>
+	<?php } ?>
 </ul>
 <?php } ?>
 <div class="tab-content">
 	<div class="tab-pane <?php if(!$this->get('user_is_owner') || $this->get('admin')) out(' active') ?>" id="info">
 		<h2 class="sr-only">Information</h2>
+		<?php if ($this->get('pubkey')->deleted) { ?>
+			<div class="alert alert-danger">This key has been deleted</div>
+		<?php } ?>
 		<dl>
 			<dt>Key data</dt>
 			<dd><pre><?php out($this->get('pubkey')->export())?></pre></dd>
@@ -62,7 +67,7 @@ $owner = $this->get('pubkey')->owner;
 			<dd><pre class="ascii-art"><?php out($this->get('pubkey')->randomart_sha256)?></pre></dd>
 		</dl>
 	</div>
-	<?php if($this->get('user_is_owner') || $this->get('admin')) { ?>
+	<?php if(($this->get('user_is_owner') || $this->get('admin')) && !$this->get('pubkey')->deleted) { ?>
 	<div class="tab-pane" id="sig">
 		<h2 class="sr-only">Key signing</h2>
 		<form method="post" action="<?php outurl($this->data->relative_request_url)?>" enctype="multipart/form-data">

@@ -171,7 +171,8 @@ class PublicKey extends Record {
 	* @return string key in OpenSSH-text-format
 	*/
 	public function export() {
-		return "{$this->type} {$this->keydata} {$this->comment}";
+		$delete_prefix = $this->deleted ? '# (deleted) ' : '';
+		return "{$delete_prefix}{$this->type} {$this->keydata} {$this->comment}";
 	}
 
 	/**

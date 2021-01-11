@@ -31,8 +31,8 @@
 	<div class="tab-pane fade" id="details">
 		<h2 class="sr-only">Details</h2>
 		<h3><a href="<?php outurl('/users/'.urlencode($this->get('user')->uid).'/pubkeys')?>">Public keys</a></h3>
-		<?php if(count($this->get('user_keys')) == 0) { ?>
-		<p><?php out($this->get('user')->name)?> has no public keys uploaded.</p>
+		<?php if(count($this->get('active_user_keys')) == 0) { ?>
+		<p><?php out($this->get('user')->name)?> has no active public keys.</p>
 		<?php } else { ?>
 		<table class="table">
 			<thead>
@@ -46,7 +46,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				<?php foreach($this->get('user_keys') as $key) { ?>
+				<?php foreach($this->get('active_user_keys') as $key) { ?>
 				<tr>
 					<td><?php out($key->type) ?></td>
 					<td>
@@ -66,6 +66,13 @@
 				<?php } ?>
 			</tbody>
 		</table>
+		<?php } ?>
+		<?php
+			$num_deleted = $this->get('user')->count_deleted_public_keys();
+			if ($num_deleted > 0) {
+				$keys_plural = $num_deleted == 1 ? 'key' : 'keys';
+		?>
+		<p><a href="<?php outurl('/users/'.urlencode($this->get('user')->uid).'/pubkeys')?>">Show all public keys</a> (Including <?php out($this->get('user')->count_deleted_public_keys()) ?> deleted <?php out($keys_plural) ?>)</p>
 		<?php } ?>
 		<?php if($this->get('admin')) { ?>
 		<h3>Groups</h3>

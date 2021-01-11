@@ -64,13 +64,14 @@
 			<th>Size</th>
 			<th>Comment</th>
 			<th>Owner</th>
+			<th></th>
 		</tr>
 	</thead>
 	<tbody>
 		<?php
 		foreach($this->get('pubkeys') as $pubkey) {
 		?>
-		<tr>
+		<tr<?php if ($pubkey->deleted) { out(' class="deleted"', ESC_NONE); } ?>>
 			<td>
 				<a href="<?php outurl('/pubkeys/'.urlencode($pubkey->id))?>">
 					<span class="fingerprint_md5"><?php out($pubkey->fingerprint_md5)?></span>
@@ -98,6 +99,11 @@
 					break;
 				}
 				?>
+			</td>
+			<td>
+				<?php if ($pubkey->deleted) { ?>
+					<i class="glyphicon glyphicon-remove"></i> Deleted
+				<?php } ?>
 			</td>
 		</tr>
 		<?php

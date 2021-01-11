@@ -188,3 +188,9 @@ a {
 a:focus, a:hover {
 	color: #611d42;
 }
+.deleted {
+	opacity: 0.5;
+}
+.deleted .glyphicon-remove {
+	color: #c00;
+}
