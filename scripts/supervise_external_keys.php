@@ -18,13 +18,73 @@
 
 chdir(__DIR__);
 require('../core.php');
+$active_user = User::get_keys_sync_user();
+
 $servers = $server_dir->list_servers();
 $keys = [];
 foreach ($servers as $server) {
+	$error_string = "";
 	try {
-		$keys[$server->hostname] = read_server_keys($server);
+		$keys[$server->id] = read_server_keys($server, $error_string);
 	} catch (Exception $e) {
-		throw new Exception("Could not get keys of {$server->hostname}:\n  " . $e->getMessage());
+		$error_string .= "Exception while reading keys of {$server->hostname}:\n  " . $e->getMessage() . "\n";
+	}
+	if ($error_string == "") {
+		// Empty error set is stored as null in database
+		$error_string = null;
+	}
+	if ($error_string !== $server->key_supervision_error) {
+		$server->key_supervision_error = $error_string;
+		$server->update();
+	}
+}
+
+// Associative array that maps key contents (base64 strings) to a list of ExternalKey objects.
+$found_keys = [];
+
+foreach ($keys as $server_id => $entries) {
+	foreach ($entries as $entry) {
+		$key_content = $entry['key'];
+		if (!isset($found_keys[$key_content])) {
+			$found_keys[$key_content] = new ExternalKey(null, [
+				'type' => $entry['type'],
+				'keydata' => $key_content,
+			]);
+			$found_keys[$key_content]->occurrence = [];
+		}
+		$found_keys[$key_content]->occurrence[] = new ExternalKeyOccurrence(null, [
+			'server' => $server_id,
+			'account_name' => $entry['user'],
+			'comment' => $entry['comment'],
+		]);
+	}
+}
+
+$keys_in_db = ExternalKey::list_external_keys();
+
+// Associative array that maps key contents (base64 strings) to a list of ExternalKey objects.
+$keys_in_db_assoc = [];
+foreach ($keys_in_db as $key) {
+	$keys_in_db_assoc[$key->keydata] = $key;
+}
+
+foreach ($found_keys as $keydata => $key) {
+	// Look for keys that have been found but are not in the database
+	if (!isset($keys_in_db_assoc[$keydata])) {
+		$key->insert();
+	}
+}
+
+foreach ($keys_in_db_assoc as $keydata => $key) {
+	if (isset($found_keys[$key->keydata])) {
+		// Keys are already known and also still in use - update occurrences
+		$key->update_occurrences($found_keys[$key->keydata]->occurrence);
+	} elseif ($key->status == 'new') {
+		// Keys in state 'new' that are no longer on any system will be deleted
+		$key->delete();
+	} else {
+		// For other keys not in state 'new' that are no longer on any system, occurrences will be deleted
+		$key->update_occurrences([]);
 	}
 }
 
@@ -73,9 +133,10 @@ function parse_user_entry(string $line) {
  * - comment: (string) comment field at the end of a key entry
  *
  * @param Server $server The server to read keys from
+ * @param string &$error_string Reference to a string variable where error messages are appended
  * @return array of ssh keys that are active on this server
  */
-function read_server_keys(Server $server) {
+function read_server_keys(Server $server, string &$error_string) {
 	global $server_dir;
 
 	echo date('c')." Reading external ssh keys from {$server->hostname}\n";
@@ -125,9 +186,9 @@ function read_server_keys(Server $server) {
 	try {
 		foreach ($user_entries as $user) {
 			$path = "{$user['home']}/.ssh/authorized_keys";
-			add_entries($keys, $user['user'], "ssh2.sftp://{$sftp}{$path}");
+			add_entries($keys, $user['user'], "ssh2.sftp://{$sftp}", $path, $error_string);
 			$path .= '2';
-			add_entries($keys, $user['user'], "ssh2.sftp://{$sftp}{$path}");
+			add_entries($keys, $user['user'], "ssh2.sftp://{$sftp}", $path, $error_string);
 		}
 	} catch (Exception $e) {
 		throw new Exception("Could not parse external keys in $path:\n  " . $e->getMessage());
@@ -142,13 +203,16 @@ function read_server_keys(Server $server) {
  *
  * @param array $entries Reference to the array of entries to fill
  * @param string $user Username to add to the entries
+ * @param string $sftp_url Resource-URL for the sftp connection to the server
  * @param string $filename Name of the authorized_keys file to scan (If it does not exist, it is ignored)
+ * @param string &$error_string Reference to a string variable where error messages are appended
  */
-function add_entries(array &$entries, string $user, string $filename) {
-	if (!file_exists($filename)) {
+function add_entries(array &$entries, string $user, string $sftp_url, string $filename, string &$error_string) {
+	if (!file_exists($sftp_url . $filename)) {
+		check_missing_file($sftp_url, $filename, $error_string);
 		return;
 	}
-	$lines = file($filename);
+	$lines = file($sftp_url . $filename);
 	foreach ($lines as $line) {
 		// ignore empty lines and comments
 		if ($line !== '' && substr($line, 0, 1) !== '#') {
@@ -164,4 +228,28 @@ function add_entries(array &$entries, string $user, string $filename) {
 			}
 		}
 	}
+}
+
+/**
+ * Check if the specified file is actually non-existent (in which case nothing happens)
+ * If the file is instead not accessible because of permissions, an error message will be appended to $error_string
+ * This function works by iteratively checking directories upwards, if they are readable.
+ *
+ * @param string $sftp_url Resource-URL for the sftp connection to the server
+ * @param string $filename Name of the authorized_keys file to scan (If it does not exist, it is ignored)
+ * @param string &$error_string Reference to a string variable where error messages are appended
+ */
+function check_missing_file(string $sftp_url, string $filename, string &$error_string) {
+	$dir = $filename;
+	do {
+		$dir = dirname($dir);
+		if (file_exists($sftp_url . $dir)) {
+			if (!is_readable($sftp_url . $dir)) {
+				// The directory is not readable - could not truly check the existence of the file.
+				// This is an error.
+				$error_string .= "Could not check if $filename exists, because $dir is not readable.\n";
+			} // else: The directory above is readable, so the file does actually not exist. No error.
+			return;
+		}
+	} while ($dir != "/" && $dir != ".");
 }
