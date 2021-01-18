@@ -167,6 +167,18 @@ function show_key(ExternalKey $key, array $buttons, string $relative_request_url
 			}
 		}
 		?>
+		<h2>Errors while scanning for new keys</h2>
+		<?php
+		if (empty($this->get('supervise_errors'))) {
+			?><p>There were no errors during the scan for new, unknown keys.</p><?php
+		} else {
+			?><p>The following errors occurred while scanning for new, unknown keys:</p><?php
+			foreach ($this->get('supervise_errors') as $server) { ?>
+			<h4><?php out($server->hostname) ?></h4>
+			<pre><?php out($server->key_supervision_error) ?></pre>
+			<?php }
+		}
+		?>
 	</div>
 	<div class="tab-pane fade" id="allowed">
 		<h2 class="sr-only">Allowed keys</h2>

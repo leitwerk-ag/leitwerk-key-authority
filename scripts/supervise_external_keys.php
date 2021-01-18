@@ -24,6 +24,7 @@ $servers = $server_dir->list_servers();
 $keys = [];
 foreach ($servers as $server) {
 	$error_string = "";
+	$start_time = date('c');
 	try {
 		$keys[$server->id] = read_server_keys($server, $error_string);
 	} catch (Exception $e) {
@@ -32,6 +33,9 @@ foreach ($servers as $server) {
 	if ($error_string == "") {
 		// Empty error set is stored as null in database
 		$error_string = null;
+	} else {
+		// Prepend start time to non-empty error sets
+		$error_string = $start_time . "\n" . $error_string;
 	}
 	if ($error_string !== $server->key_supervision_error) {
 		$server->key_supervision_error = $error_string;
@@ -212,7 +216,12 @@ function add_entries(array &$entries, string $user, string $sftp_url, string $fi
 		check_missing_file($sftp_url, $filename, $error_string);
 		return;
 	}
-	$lines = file($sftp_url . $filename);
+	try {
+		$lines = file($sftp_url . $filename);
+	} catch (ErrorException $e) {
+		$error_string .= "Failed to read $filename\n  {$e->getMessage()}\n";
+		return;
+	}
 	foreach ($lines as $line) {
 		// ignore empty lines and comments
 		if ($line !== '' && substr($line, 0, 1) !== '#') {
