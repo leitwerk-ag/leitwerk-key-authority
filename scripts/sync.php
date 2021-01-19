@@ -213,7 +213,7 @@ function sync_server($id, $only_username = null, $preview = false) {
 					if(count($keys) > 0) {
 						if($user->active) {
 							foreach($keys as $key) {
-								$keyfile .= $prefix.$key->export()."\n";
+								$keyfile .= $prefix.$key->export_userkey_with_fixed_comment($user)."\n";
 							}
 						} else {
 							$keyfile .= "# Inactive account\n";
@@ -508,7 +508,7 @@ function get_keys($access_rules, $account_name, $hostname) {
 			if($entity->active) {
 				$keys = $entity->list_public_keys($account_name, $hostname);
 				foreach($keys as $key) {
-					$keyfile .= $prefix.$key->export()."\n";
+					$keyfile .= $prefix.$key->export_userkey_with_fixed_comment($entity)."\n";
 				}
 			} else {
 				$keyfile .= "# Inactive account\n";
@@ -521,7 +521,7 @@ function get_keys($access_rules, $account_name, $hostname) {
 			if($entity->server->key_management != 'decommissioned') {
 				$keys = $entity->list_public_keys($account_name, $hostname);
 				foreach($keys as $key) {
-					$keyfile .= $prefix.$key->export()."\n";
+					$keyfile .= $prefix.$key->export_serverkey_with_fixed_comment($entity)."\n";
 				}
 			} else {
 				$keyfile .= "# Decommissioned server\n";
@@ -556,7 +556,7 @@ function get_group_keys($entities, $account_name, $hostname, $prefix, &$seen) {
 			if($entity->active) {
 				$keys = $entity->list_public_keys($account_name, $hostname);
 				foreach($keys as $key) {
-					$keyfile .= $prefix.$key->export()."\n";
+					$keyfile .= $prefix.$key->export_userkey_with_fixed_comment($entity)."\n";
 				}
 			} else {
 				$keyfile .= "# Inactive account\n";
@@ -568,7 +568,7 @@ function get_group_keys($entities, $account_name, $hostname, $prefix, &$seen) {
 			if($entity->server->key_management != 'decommissioned') {
 				$keys = $entity->list_public_keys($account_name, $hostname);
 				foreach($keys as $key) {
-					$keyfile .= $prefix.$key->export()."\n";
+					$keyfile .= $prefix.$key->export_serverkey_with_fixed_comment($entity)."\n";
 				}
 			} else {
 				$keyfile .= "# Decommissioned server\n";

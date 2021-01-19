@@ -175,6 +175,36 @@ class PublicKey extends Record {
 	}
 
 	/**
+	 * Provide the key in OpenSSH-text-format, but use 'username, creation date' as comment.
+	 *
+	 * @param User $owner Owner of this key, to display the name in the comment section
+	 * @return string key in OpenSSH-text-format
+	 */
+	public function export_userkey_with_fixed_comment(User $owner) {
+		if ($this->creation_date === null) {
+			$date = '';
+		} else {
+			$date = ', ' . $this->creation_date;
+		}
+		return "{$this->type} {$this->keydata} {$owner->name}{$date}";
+	}
+
+	/**
+	 * Provide the key in OpenSSH-text-format, but use 'username, creation date' as comment.
+	 *
+	 * @param ServerAccount $owner Owner of this key, to display the name in the comment section
+	 * @return string key in OpenSSH-text-format
+	 */
+	public function export_serverkey_with_fixed_comment(ServerAccount $owner) {
+		if ($this->creation_date === null) {
+			$date = '';
+		} else {
+			$date = ', ' . $this->creation_date;
+		}
+		return "{$this->type} {$this->keydata} {$owner->name}@{$owner->server->hostname}{$date}";
+	}
+
+	/**
 	* Provide a text summary of details about the key, including hashes, randomart and link to view it.
 	* @return string text summary
 	*/
