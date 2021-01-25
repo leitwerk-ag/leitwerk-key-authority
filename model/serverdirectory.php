@@ -137,6 +137,11 @@ class ServerDirectory extends DBDirectory {
 				case 'sync_status':
 					$where[] = "server.$field IN ('".implode("', '", array_map(array($this->database, 'escape_string'), $value))."')";
 					break;
+				case 'key_supervision_error':
+					if ($value == "not-null") {
+						$where[] = "server.key_supervision_error IS NOT NULL";
+					}
+					break;
 				}
 			}
 		}
