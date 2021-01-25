@@ -173,6 +173,7 @@ function pubkey_json($pubkey, $include_keydata = true, $include_owner = true) {
 	if($include_keydata) {
 		$json->keydata = $pubkey->export();
 	}
+	$json->creation_date = $pubkey->creation_date;
 	$json->type = $pubkey->type;
 	$json->keysize = $pubkey->keysize;
 	$json->fingerprint = $pubkey->fingerprint_md5;
