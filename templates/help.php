@@ -66,7 +66,7 @@ $security_config = $this->get('security_config');
 				<a data-toggle="collapse" data-parent="#help" href="#getting_access">
 					Getting access to a server
 				</a>
-			</h4>
+			</h2>
 		</div>
 		<div id="getting_access" class="panel-collapse collapse">
 			<div class="panel-body">
