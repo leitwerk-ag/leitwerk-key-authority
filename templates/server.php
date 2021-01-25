@@ -302,11 +302,13 @@
 						<label>
 							<input type="radio" name="key_management" value="other"<?php if($this->get('server')->key_management == 'other') out(' checked') ?>>
 							Disabled - SSH keys managed by another system
+						</label>
 					</div>
 					<div class="radio">
 						<label>
 							<input type="radio" name="key_management" value="decommissioned"<?php if($this->get('server')->key_management == 'decommissioned') out(' checked') ?>>
 							Disabled - server has been decommissioned
+						</label>
 					</div>
 				</div>
 			</div>

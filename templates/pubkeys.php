@@ -106,7 +106,7 @@ function show_key(ExternalKey $key, array $buttons, string $relative_request_url
 				</div>
 			</div>
 		</div>
-		<p><?php $total = count($this->get('pubkeys')); out(number_format($total).' public key'.($total == 1 ? '' : 's').' found')?></p>
+		<p><?php $total = count($this->get('pubkeys')); out(number_format($total).' public key'.($total == 1 ? '' : 's').' found'); ?></p>
 		<table class="table table-striped">
 			<thead>
 				<tr>

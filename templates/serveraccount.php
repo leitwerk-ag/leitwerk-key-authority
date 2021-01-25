@@ -26,7 +26,7 @@ default: $sync_class = 'warning'; $sync_message = 'Not synced'; break;
 <?php if($this->get('server')->key_management == 'keys') { ?>
 <?php if($this->get('account')->name != 'root' && $this->get('server')->sync_status == 'sync warning') { ?>
 <div class="alert alert-danger">
-	Non-root accounts are not being synchronized on this server yet.  See <a href="<?php outurl('/help#sync_setup')?>">the help pages</a> for details of what is required to activate syncing for all accounts.</p>
+	<p>Non-root accounts are not being synchronized on this server yet.  See <a href="<?php outurl('/help#sync_setup')?>">the help pages</a> for details of what is required to activate syncing for all accounts.</p>
 </div>
 <?php } else { ?>
 <dl class="oneline">
@@ -202,7 +202,7 @@ default: $sync_class = 'warning'; $sync_message = 'Not synced'; break;
 			<div class="row">
 				<div class="form-group col-md-2">
 					<div class="input-group">
-						<span class="input-group-addon"><label for="account"<span class="glyphicon glyphicon-log-in" title="Server account"></span><span class="sr-only">Account name</span></label></span>
+						<span class="input-group-addon"><label for="account"><span class="glyphicon glyphicon-log-in" title="Server account"></span><span class="sr-only">Account name</span></label></span>
 						<input type="text" id="account" name="account" class="form-control" placeholder="Account name" required>
 					</div>
 				</div>
@@ -384,7 +384,7 @@ default: $sync_class = 'warning'; $sync_message = 'Not synced'; break;
 			</div>
 			<?php if($this->get('active_user')->admin) { ?>
 			<div class="checkbox">
-				<label><input type="checkbox" name="force"> Allow weak (< 4096 bits) key</label>
+				<label><input type="checkbox" name="force"> Allow weak (&lt; 4096 bits) key</label>
 			</div>
 			<?php } ?>
 			<div class="form-group"><button class="btn btn-primary btn-lg btn-block">Add public key to account</button></div>
