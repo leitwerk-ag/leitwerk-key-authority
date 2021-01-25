@@ -20,7 +20,7 @@ chdir(__DIR__);
 require('../core.php');
 $active_user = User::get_keys_sync_user();
 
-$servers = $server_dir->list_servers();
+$servers = $server_dir->list_servers([], ['key_management' => ['keys']]);
 $keys = [];
 foreach ($servers as $server) {
 	$error_string = "";
