@@ -66,6 +66,12 @@
 	</ul>
 </div>
 <?php } ?>
+<?php if ($this->get('server')->key_supervision_error !== null) { ?>
+<div class="alert alert-danger">
+	<p>Failed to supervise external keys on this server:</p>
+	<pre><?php out($this->get('server')->key_supervision_error) ?></pre>
+</div>
+<?php } ?>
 <?php } ?>
 <ul class="nav nav-tabs">
 	<li><a href="#accounts" data-toggle="tab">Accounts</a></li>

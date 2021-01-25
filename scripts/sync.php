@@ -351,6 +351,7 @@ function sync_server($id, $only_username = null, $preview = false) {
 					$server->sync_report('sync failure', 'Hostnames file missing');
 					$server->delete_all_sync_requests();
 					report_all_accounts_failed($keyfiles);
+					$server->update_status_file($sftp);
 					return;
 				} else {
 					$allowed_hostnames = null;
@@ -368,6 +369,7 @@ function sync_server($id, $only_username = null, $preview = false) {
 			$server->sync_report('sync failure', 'Hostname check failed');
 			$server->delete_all_sync_requests();
 			report_all_accounts_failed($keyfiles);
+			$server->update_status_file($sftp);
 			return;
 		}
 	}
@@ -484,6 +486,9 @@ function sync_server($id, $only_username = null, $preview = false) {
 		$server->sync_report('sync warning', $sync_warning);
 	} else {
 		$server->sync_report('sync success', 'Synced successfully');
+	}
+	if ($server->sync_status !== 'sync success' || $server->key_supervision_error === null) {
+		$server->update_status_file($sftp);
 	}
 	echo date('c')." {$hostname}: Sync finished\n";
 }
