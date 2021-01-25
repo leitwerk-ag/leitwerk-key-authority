@@ -25,8 +25,9 @@ $keys = [];
 foreach ($servers as $server) {
 	$error_string = "";
 	$start_time = date('c');
+	$sftp = null;
 	try {
-		$keys[$server->id] = read_server_keys($server, $error_string);
+		$keys[$server->id] = read_server_keys($server, $error_string, $sftp);
 	} catch (Exception $e) {
 		$error_string .= "Exception while reading keys of {$server->hostname}:\n  " . $e->getMessage() . "\n";
 	}
@@ -40,6 +41,15 @@ foreach ($servers as $server) {
 	if ($error_string !== $server->key_supervision_error) {
 		$server->key_supervision_error = $error_string;
 		$server->update();
+	}
+	if ($sftp !== null) {
+		// Avoid false-negative message after a downtime
+		// If sync is on error state but key supervision succeeds, this may be because the
+		// target server recently recovered from downtime.
+		// In this case, no false-negative status file will be placed.
+		if ($server->key_supervision_error !== null || $server->sync_status === 'sync success') {
+			$server->update_status_file($sftp);
+		}
 	}
 }
 
@@ -138,9 +148,10 @@ function parse_user_entry(string $line) {
  *
  * @param Server $server The server to read keys from
  * @param string &$error_string Reference to a string variable where error messages are appended
+ * @param &$sftp Reference to a variable, where the sftp handle is stored by this function, if it could be opened successfully.
  * @return array of ssh keys that are active on this server
  */
-function read_server_keys(Server $server, string &$error_string) {
+function read_server_keys(Server $server, string &$error_string, &$sftp) {
 	global $server_dir;
 
 	echo date('c')." Reading external ssh keys from {$server->hostname}\n";
