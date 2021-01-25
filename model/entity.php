@@ -160,7 +160,7 @@ abstract class Entity extends Record {
 	*/
 	public function delete_public_key(PublicKey $key) {
 		if(is_null($this->entity_id)) throw new BadMethodCallException('Entity must be in directory before public keys can be deleted');
-		$stmt = $this->database->prepare("DELETE FROM public_key WHERE entity_id = ? AND id = ?");
+		$stmt = $this->database->prepare("UPDATE public_key SET deleted = true WHERE entity_id = ? AND id = ?");
 		$stmt->bind_param('dd', $this->entity_id, $key->id);
 		$stmt->execute();
 		$stmt->close();
@@ -194,16 +194,26 @@ abstract class Entity extends Record {
 	* @todo this is perhaps an unintuitive place to do this kind of filtering
 	* @param string|null $account_name to filter for in the destination rules for each key
 	* @param string|null $hostname to filter for in the destination rules for each key
+	* @param bool|null $deleted true: only deleted keys, false: only active keys, null: all keys
 	* @return array of PublicKey objects
 	*/
-	public function list_public_keys($account_name = null, $hostname = null) {
+	public function list_public_keys($account_name = null, $hostname = null, $deleted = null) {
 		if(is_null($this->entity_id)) throw new BadMethodCallException('Entity must be in directory before public keys can be listed');
+		if ($deleted === null) {
+			$deleted_condition = "";
+		} else if ($deleted) {
+			$deleted_condition = "AND deleted = true";
+		} else {
+			$deleted_condition = "AND deleted = false";
+		}
 		$stmt = $this->database->prepare("
 			SELECT public_key.*, COUNT(public_key_dest_rule.id) AS dest_rule_count
 			FROM public_key
 			LEFT JOIN public_key_dest_rule ON public_key_dest_rule.public_key_id = public_key.id
 			WHERE entity_id = ?
+			$deleted_condition
 			GROUP BY public_key.id
+			ORDER BY deleted, id
 		");
 		$stmt->bind_param('d', $this->entity_id);
 		$stmt->execute();
@@ -239,6 +249,25 @@ abstract class Entity extends Record {
 		}
 		$stmt->close();
 		return $keys;
+	}
+
+	/**
+	 * Count how many public keys of this entity are no longer active (have been deleted)
+	 *
+	 * @return int The number of keys
+	 */
+	public function count_deleted_public_keys() {
+		$stmt = $this->database->prepare("
+			SELECT COUNT(*) as num
+			FROM public_key
+			WHERE entity_id = ?
+			AND deleted = true
+		");
+		$stmt->bind_param('d', $this->entity_id);
+		$stmt->execute();
+		$result = $stmt->get_result();
+		$row = $result->fetch_assoc();
+		return (int)$row['num'];
 	}
 
 	/**

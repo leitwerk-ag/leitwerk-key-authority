@@ -29,6 +29,8 @@
 		<dd><?php out($pubkey->fingerprint_md5)?></dd>
 		<dt>Fingerprint (SHA256)</dt>
 		<dd><?php out($pubkey->fingerprint_sha256)?></dd>
+		<dt>Status</dt>
+		<dd><?php out($pubkey->deleted ? 'Deleted' : 'Active') ?>
 	</dl>
 </div>
 <?php } ?>

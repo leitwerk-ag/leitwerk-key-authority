@@ -58,7 +58,7 @@ if(isset($_POST['reassign_servers']) && is_array($_POST['servers']) && $active_u
 	$content->set('user_admined_servers', $admined_servers);
 	$content->set('user_admined_groups', $admined_groups);
 	$content->set('user_groups', $groups);
-	$content->set('user_keys', $user->list_public_keys());
+	$content->set('active_user_keys', $user->list_public_keys(null, null, false));
 	$content->set('admin', $active_user->admin);
 }
 

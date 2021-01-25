@@ -209,7 +209,7 @@ function sync_server($id, $only_username = null, $preview = false) {
 			if(is_null($only_username) || $username == $only_username) {
 				if(!isset($keyfiles[$username])) {
 					$keyfile = sprintf($header, "LDAP user '{$user->uid}'", $config['web']['baseurl']);
-					$keys = $user->list_public_keys($username, $hostname);
+					$keys = $user->list_public_keys($username, $hostname, false);
 					if(count($keys) > 0) {
 						if($user->active) {
 							foreach($keys as $key) {
@@ -506,7 +506,7 @@ function get_keys($access_rules, $account_name, $hostname) {
 			$keyfile .= " granted access by {$access->granted_by->uid} on {$grant_date_full}";
 			$keyfile .= "\n";
 			if($entity->active) {
-				$keys = $entity->list_public_keys($account_name, $hostname);
+				$keys = $entity->list_public_keys($account_name, $hostname, false);
 				foreach($keys as $key) {
 					$keyfile .= $prefix.$key->export()."\n";
 				}
@@ -519,7 +519,7 @@ function get_keys($access_rules, $account_name, $hostname) {
 			$keyfile .= " granted access by {$access->granted_by->uid} on {$grant_date_full}";
 			$keyfile .= "\n";
 			if($entity->server->key_management != 'decommissioned') {
-				$keys = $entity->list_public_keys($account_name, $hostname);
+				$keys = $entity->list_public_keys($account_name, $hostname, false);
 				foreach($keys as $key) {
 					$keyfile .= $prefix.$key->export()."\n";
 				}
@@ -554,7 +554,7 @@ function get_group_keys($entities, $account_name, $hostname, $prefix, &$seen) {
 			$keyfile .= "# {$entity->uid}";
 			$keyfile .= "\n";
 			if($entity->active) {
-				$keys = $entity->list_public_keys($account_name, $hostname);
+				$keys = $entity->list_public_keys($account_name, $hostname, false);
 				foreach($keys as $key) {
 					$keyfile .= $prefix.$key->export()."\n";
 				}
@@ -566,7 +566,7 @@ function get_group_keys($entities, $account_name, $hostname, $prefix, &$seen) {
 			$keyfile .= "# {$entity->name}@{$entity->server->hostname}";
 			$keyfile .= "\n";
 			if($entity->server->key_management != 'decommissioned') {
-				$keys = $entity->list_public_keys($account_name, $hostname);
+				$keys = $entity->list_public_keys($account_name, $hostname, false);
 				foreach($keys as $key) {
 					$keyfile .= $prefix.$key->export()."\n";
 				}
