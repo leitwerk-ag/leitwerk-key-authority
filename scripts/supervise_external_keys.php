@@ -229,6 +229,14 @@ function add_entries(array &$entries, string $user, string $sftp_url, string $fi
 	}
 	try {
 		$lines = file($sftp_url . $filename);
+		// Try to open in append mode 'a'. This only works, if the file is writable, but will not change the file's content.
+		// The php function is_writable() produces wrong results when using facl.
+		$f = fopen($sftp_url . $filename, 'a');
+		if ($f === false) {
+			$error_string .= "The file {$filename} is not writable for the keys-sync user. This will prevent key authority from removing old keys.\n";
+		} else {
+			fclose($f);
+		}
 	} catch (ErrorException $e) {
 		$error_string .= "Failed to read $filename\n  {$e->getMessage()}\n";
 		return;
