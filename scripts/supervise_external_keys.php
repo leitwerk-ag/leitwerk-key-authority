@@ -25,9 +25,10 @@ $keys = [];
 foreach ($servers as $server) {
 	$error_string = "";
 	$start_time = date('c');
+	$ssh = null;
 	$sftp = null;
 	try {
-		$keys[$server->id] = read_server_keys($server, $error_string, $sftp);
+		$keys[$server->id] = read_server_keys($server, $error_string, $ssh, $sftp);
 	} catch (Exception $e) {
 		$error_string .= "Exception while reading keys of {$server->hostname}:\n  " . $e->getMessage() . "\n";
 	}
@@ -151,7 +152,7 @@ function parse_user_entry(string $line) {
  * @param &$sftp Reference to a variable, where the sftp handle is stored by this function, if it could be opened successfully.
  * @return array of ssh keys that are active on this server
  */
-function read_server_keys(Server $server, string &$error_string, &$sftp) {
+function read_server_keys(Server $server, string &$error_string, &$connection, &$sftp) {
 	global $server_dir;
 
 	echo date('c')." Reading external ssh keys from {$server->hostname}\n";
@@ -201,9 +202,9 @@ function read_server_keys(Server $server, string &$error_string, &$sftp) {
 	try {
 		foreach ($user_entries as $user) {
 			$path = "{$user['home']}/.ssh/authorized_keys";
-			add_entries($keys, $user['user'], "ssh2.sftp://{$sftp}", $path, $error_string);
+			add_entries($keys, $user['user'], $connection, "ssh2.sftp://{$sftp}", $path, $error_string);
 			$path .= '2';
-			add_entries($keys, $user['user'], "ssh2.sftp://{$sftp}", $path, $error_string);
+			add_entries($keys, $user['user'], $connection, "ssh2.sftp://{$sftp}", $path, $error_string);
 		}
 	} catch (Exception $e) {
 		throw new Exception("Could not parse external keys in $path:\n  " . $e->getMessage());
@@ -218,24 +219,26 @@ function read_server_keys(Server $server, string &$error_string, &$sftp) {
  *
  * @param array $entries Reference to the array of entries to fill
  * @param string $user Username to add to the entries
+ * @param $ssh The ssh connection resource, will be used to execute a 'test -w' command
  * @param string $sftp_url Resource-URL for the sftp connection to the server
  * @param string $filename Name of the authorized_keys file to scan (If it does not exist, it is ignored)
  * @param string &$error_string Reference to a string variable where error messages are appended
  */
-function add_entries(array &$entries, string $user, string $sftp_url, string $filename, string &$error_string) {
+function add_entries(array &$entries, string $user, $ssh, string $sftp_url, string $filename, string &$error_string) {
 	if (!file_exists($sftp_url . $filename)) {
 		check_missing_file($sftp_url, $filename, $error_string);
 		return;
 	}
 	try {
 		$lines = file($sftp_url . $filename);
-		// Try to open in append mode 'a'. This only works, if the file is writable, but will not change the file's content.
+		// Use the 'test' shell command to check for writability.
 		// The php function is_writable() produces wrong results when using facl.
-		$f = fopen($sftp_url . $filename, 'a');
-		if ($f === false) {
+		$shell_escaped_filename = escapeshellarg($filename);
+		$stream = ssh2_exec($ssh, "test -w {$shell_escaped_filename}; echo $?");
+		stream_set_blocking($stream, true);
+		$output = stream_get_contents($stream);
+		if ($output !== "0\n") {
 			$error_string .= "The file {$filename} is not writable for the keys-sync user. This will prevent key authority from removing old keys.\n";
-		} else {
-			fclose($f);
 		}
 	} catch (ErrorException $e) {
 		$error_string .= "Failed to read $filename\n  {$e->getMessage()}\n";
