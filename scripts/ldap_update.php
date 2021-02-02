@@ -55,6 +55,8 @@ foreach($users as $user) {
 		} catch(UserNotFoundException $e) {
 			$user->active = 0;
 		}
+		$user->update_group_memberships();
+		$user->update();
 		if($active && !$user->active) {
 			// Check for servers that will now be admin-less
 			$servers = $user->list_admined_servers();
@@ -76,7 +78,7 @@ foreach($users as $user) {
 					$email->body = "{$user->name} ({$user->uid}) was an administrator for {$server->hostname}, but they have now been marked as a former employee and there are no active administrators remaining for this server.\n\n";
 					$email->body .= "Please find a replacement owner for this server and inform {$config['email']['admin_address']} ASAP, otherwise the server will be registered for decommissioning.";
 					$email->add_reply_to($config['email']['admin_address'], $config['email']['admin_name']);
-					if(is_null($rcpt)) {
+					if(!isset($rcpt)) {
 						$email->subject .= " - NO SUPERIOR EMPLOYEE FOUND";
 						$email->body .= "\n\nWARNING: No suitable superior employee could be found!";
 						$email->add_recipient($config['email']['report_address'], $config['email']['report_name']);
@@ -88,7 +90,5 @@ foreach($users as $user) {
 				}
 			}
 		}
-		$user->update_group_memberships();
-		$user->update();
 	}
 }
