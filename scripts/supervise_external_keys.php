@@ -20,14 +20,23 @@ chdir(__DIR__);
 require('../core.php');
 $active_user = User::get_keys_sync_user();
 
+$keys_in_db = ExternalKey::list_external_keys();
+
+// Associative array that maps key contents (base64 strings) to a list of ExternalKey objects.
+$keys_in_db_assoc = [];
+foreach ($keys_in_db as $key) {
+	$keys_in_db_assoc[$key->keydata] = $key;
+}
+
 $servers = $server_dir->list_servers([], ['key_management' => ['keys']]);
 $keys = [];
 foreach ($servers as $server) {
 	$error_string = "";
 	$start_time = date('c');
+	$ssh = null;
 	$sftp = null;
 	try {
-		$keys[$server->id] = read_server_keys($server, $error_string, $sftp);
+		$keys[$server->id] = read_server_keys($server, $error_string, $ssh, $sftp, $keys_in_db_assoc);
 	} catch (Exception $e) {
 		$error_string .= "Exception while reading keys of {$server->hostname}:\n  " . $e->getMessage() . "\n";
 	}
@@ -72,14 +81,6 @@ foreach ($keys as $server_id => $entries) {
 			'comment' => $entry['comment'],
 		]);
 	}
-}
-
-$keys_in_db = ExternalKey::list_external_keys();
-
-// Associative array that maps key contents (base64 strings) to a list of ExternalKey objects.
-$keys_in_db_assoc = [];
-foreach ($keys_in_db as $key) {
-	$keys_in_db_assoc[$key->keydata] = $key;
 }
 
 foreach ($found_keys as $keydata => $key) {
@@ -149,9 +150,10 @@ function parse_user_entry(string $line) {
  * @param Server $server The server to read keys from
  * @param string &$error_string Reference to a string variable where error messages are appended
  * @param &$sftp Reference to a variable, where the sftp handle is stored by this function, if it could be opened successfully.
+ * @param array $keys_in_db_assoc Known keys, used to check if some keys need to be removed
  * @return array of ssh keys that are active on this server
  */
-function read_server_keys(Server $server, string &$error_string, &$sftp) {
+function read_server_keys(Server $server, string &$error_string, &$connection, &$sftp, $keys_in_db_assoc) {
 	global $server_dir;
 
 	echo date('c')." Reading external ssh keys from {$server->hostname}\n";
@@ -201,9 +203,9 @@ function read_server_keys(Server $server, string &$error_string, &$sftp) {
 	try {
 		foreach ($user_entries as $user) {
 			$path = "{$user['home']}/.ssh/authorized_keys";
-			add_entries($keys, $user['user'], "ssh2.sftp://{$sftp}", $path, $error_string);
+			add_entries($keys, $user['user'], $connection, "ssh2.sftp://{$sftp}", $path, $error_string, $keys_in_db_assoc);
 			$path .= '2';
-			add_entries($keys, $user['user'], "ssh2.sftp://{$sftp}", $path, $error_string);
+			add_entries($keys, $user['user'], $connection, "ssh2.sftp://{$sftp}", $path, $error_string, $keys_in_db_assoc);
 		}
 	} catch (Exception $e) {
 		throw new Exception("Could not parse external keys in $path:\n  " . $e->getMessage());
@@ -218,34 +220,64 @@ function read_server_keys(Server $server, string &$error_string, &$sftp) {
  *
  * @param array $entries Reference to the array of entries to fill
  * @param string $user Username to add to the entries
+ * @param $ssh The ssh connection resource, will be used to execute a 'test -w' command
  * @param string $sftp_url Resource-URL for the sftp connection to the server
  * @param string $filename Name of the authorized_keys file to scan (If it does not exist, it is ignored)
  * @param string &$error_string Reference to a string variable where error messages are appended
+ * @param array $keys_in_db_assoc Known keys, used to check if some keys need to be removed
  */
-function add_entries(array &$entries, string $user, string $sftp_url, string $filename, string &$error_string) {
+function add_entries(array &$entries, string $user, $ssh, string $sftp_url, string $filename, string &$error_string, $keys_in_db_assoc) {
 	if (!file_exists($sftp_url . $filename)) {
 		check_missing_file($sftp_url, $filename, $error_string);
 		return;
 	}
 	try {
 		$lines = file($sftp_url . $filename);
+		// Use the 'test' shell command to check for writability.
+		// The php function is_writable() produces wrong results when using facl.
+		$shell_escaped_filename = escapeshellarg($filename);
+		$stream = ssh2_exec($ssh, "test -w {$shell_escaped_filename}; echo $?");
+		stream_set_blocking($stream, true);
+		$output = stream_get_contents($stream);
+		if ($output !== "0\n") {
+			$error_string .= "The file {$filename} is not writable for the keys-sync user. This will prevent key authority from removing old keys.\n";
+		}
 	} catch (ErrorException $e) {
 		$error_string .= "Failed to read $filename\n  {$e->getMessage()}\n";
 		return;
 	}
+	$file_modified = false;
+	$new_filecontent = '';
+	$line_num = 1;
 	foreach ($lines as $line) {
+		$keep_line = true; // Set to false, if line needs to be deleted
 		// ignore empty lines and comments
-		if ($line !== '' && substr($line, 0, 1) !== '#') {
+		if (trim($line) !== '' && substr($line, 0, 1) !== '#') {
 			if (preg_match('%^([^ ]+ )?((ssh|ecdsa)-[^ ]+) ([a-zA-Z0-9+/=]+)( (.*))?$%', $line, $matches)) {
-				$entries[] = [
+				$entry = [
 					'user' => $user,
 					'type' => $matches[2],
 					'key' => $matches[4],
 					'comment' => $matches[6],
 				];
+				if (isset($keys_in_db_assoc[$entry['key']]) && $keys_in_db_assoc[$entry['key']]->status == 'denied') {
+					$keep_line = false;
+				}
+				$entries[] = $entry;
 			} else {
-				throw new Exception("Found an invalid ssh key line:\n  $line");
+				$error_string .= "Line $line_num in $filename has an invalid format.\n";
 			}
+		}
+		if ($keep_line) {
+			$new_filecontent .= $line;
+			$line_num++;
+		} else {
+			$file_modified = true;
+		}
+	}
+	if ($file_modified) {
+		if (file_put_contents($sftp_url . $filename, $new_filecontent) === false) {
+			$error_string .= "Removing 'denied' keys from $filename failed: file_put_contents() returned false.\n";
 		}
 	}
 }
