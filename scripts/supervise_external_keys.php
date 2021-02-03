@@ -87,6 +87,7 @@ foreach ($found_keys as $keydata => $key) {
 	// Look for keys that have been found but are not in the database
 	if (!isset($keys_in_db_assoc[$keydata])) {
 		$key->insert();
+		sendmail_appeared_key($key);
 	}
 }
 
@@ -304,4 +305,127 @@ function check_missing_file(string $sftp_url, string $filename, string &$error_s
 			return;
 		}
 	} while ($dir != "/" && $dir != ".");
+}
+
+/**
+ * Send an email to the serveraccount admins and server admins, informing about one new key.
+ * @param ExternalKey $appeared_key
+ */
+function sendmail_appeared_key(ExternalKey $appeared_key)  {
+	global $config, $server_dir;
+
+	// Two-dimensional array of affected accounts:
+	// First index: server id; Second index: account name; Value: the key comment
+	$server_accounts = [];
+
+	foreach ($appeared_key->occurrence as $occurrence) {
+		if (!isset($server_accounts[$occurrence->server])) {
+			$server_accounts[$occurrence->server] = [];
+		}
+		if (!isset($server_accounts[$occurrence->server][$occurrence->account_name])) {
+			$server_accounts[$occurrence->server][$occurrence->account_name] = $occurrence->comment;
+		}
+	}
+
+	$to = []; // associative arrays, mapping mail address to user name
+	$cc = []; // Users may be added to both (to + cc), in this case they will only be mentioned in To, not in Cc.
+
+	foreach ($server_accounts as $server_id => $account_names) {
+		$server = $server_dir->get_server_by_id($server_id);
+		$accounts = $server->list_accounts();
+		$serveradmins_as_recipients = false;
+		foreach ($accounts as $account) {
+			$account_admins_informed = false;
+			if (isset($account_names[$account->name])) {
+				$account_admins = $account->list_admins();
+				foreach ($account_admins as $account_admin) {
+					$to[$account_admin->email] = $account_admin->name;
+					$account_admins_informed = true;
+				}
+			}
+			if (!$account_admins_informed) {
+				$serveradmins_as_recipients = true;
+			}
+		}
+		foreach ($server->list_effective_admins() as $server_admin) {
+			if ($serveradmins_as_recipients) {
+				$to[$server_admin->email] = $server_admin->name;
+			} else {
+				// If every affected account has own admins, server admins will only be mentioned in cc
+				$cc[$server_admin->email] = $server_admin->name;
+			}
+		}
+	}
+
+	$email = new Email;
+	foreach ($to as $rcpt_mail => $rcpt_name) {
+		$email->add_recipient($rcpt_mail, $rcpt_name);
+	}
+	foreach ($cc as $cc_rcpt_mail => $cc_rcpt_name) {
+		if (!isset($to[$cc_rcpt_mail])) {
+			$email->add_cc($cc_rcpt_mail, $cc_rcpt_name);
+		}
+	}
+	$email->add_cc($config['email']['report_address'], $config['email']['report_name']);
+
+	// Create different mail layouts, depending on the number of servers / accounts
+	$singleserver = count($server_accounts) == 1;
+	$singleaccount = $singleserver && count(reset($server_accounts)) == 1;
+	if ($singleserver) {
+		$server_id = array_keys($server_accounts)[0];
+		$server = $server_dir->get_server_by_id($server_id);
+		$hostname = $server->hostname;
+		if ($singleaccount) {
+			$account_name = array_keys(reset($server_accounts))[0];
+			$accounts_comments = reset($server_accounts);
+			$comment = reset($accounts_comments);
+
+			$email->subject = "New ssh key appeared on {$account_name}@{$hostname}";
+			$email->body = "The following key was found on {$account_name}@{$hostname} during a server scan:\n";
+			$email->body .= "{$appeared_key->type} {$appeared_key->keydata} {$comment}\n";
+		} else {
+			$email->subject = "New ssh key appeared on {$hostname}";
+			$email->body = "The following key was found on {$hostname} during a server scan:\n";
+			$email->body .= "{$appeared_key->type} {$appeared_key->keydata}\n\n";
+			$email->body .= "The following accounts are affected:\n";
+			$email->body .= accounts_and_comments_table(reset($server_accounts));
+		}
+	} else {
+		$email->subject = "New ssh key appeared on multiple servers";
+		$email->body = "The following key was found during a server scan:\n";
+		$email->body .= "{$appeared_key->type} {$appeared_key->keydata}\n\n";
+		$email->body .= "The following servers are affected:\n";
+		foreach ($server_accounts as $server_id => $accounts) {
+			$server = $server_dir->get_server_by_id($server_id);
+			$hostname = $server->hostname;
+			$email->body .= "\n{$hostname}:\n";
+			$email->body .= accounts_and_comments_table($accounts);
+		}
+	}
+
+	$email->send();
+}
+
+/**
+ * Create a text-based table with server account names and ssh key comments.
+ *
+ * @param array $accounts Associative array mapping account names to key comments
+ * @return string The resulting table as multi-line string
+ */
+function accounts_and_comments_table(array $accounts) {
+	$account_header = "Account";
+	$comment_header = "Key comment";
+	$account_column_width = max(iconv_strlen($account_header), ...array_map('iconv_strlen', array_keys($accounts)));
+	$comment_column_width = max(iconv_strlen($comment_header), ...array_map('iconv_strlen', array_values($accounts)));
+
+	$row_format = " %-{$account_column_width}s|%-{$comment_column_width}s\n";
+	// heading
+	$output = sprintf($row_format, $account_header, $comment_header);
+	// horizontal line
+	$output .= sprintf(" %-'-{$account_column_width}s+%-'-{$comment_column_width}s\n", "", "");
+	// data rows
+	foreach ($accounts as $account => $comment) {
+		$output .= sprintf($row_format, $account, $comment);
+	}
+	return $output;
 }
