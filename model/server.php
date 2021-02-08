@@ -589,30 +589,24 @@ class Server extends Record {
 	 */
 	public function update_status_file($sftp) {
 		global $config;
-		$success = true;
-		$messages = "";
-		if ($this->sync_status !== 'sync success') {
-			$success = false;
-			$lastlogmsg = $this->get_last_sync_event();
-			if ($lastlogmsg === null) {
-				$msg = '';
-			} else {
-				$msg = ' - ' . json_decode($lastlogmsg->details)->value;
-			}
-			$messages .= "Current sync status: {$this->sync_status}{$msg}\n";
-		}
-		if ($this->key_supervision_error !== null) {
-			$success = false;
-			$messages .= "The key supervision failed:\n{$this->key_supervision_error}";
-		}
-		if ($success) {
-			$timeout = (int)($config['monitoring']['status_file_timeout'] ?? 7200);
-			$expire = date('r', time() + $timeout);
-			$file_content = "200 OK\nExpires: {$expire}\n";
+		$timeout = (int)($config['monitoring']['status_file_timeout'] ?? 7200);
+		$expire = date('r', time() + $timeout);
+		$lastlogmsg = $this->get_last_sync_event();
+		if ($lastlogmsg !== null) {
+			$sync_status_message = json_decode($lastlogmsg->details)->value;
 		} else {
-			$date = date('r');
-			$file_content = "500 Action Failed\nDate: {$date}\n\n{$messages}";
+			$sync_status_message = null;
 		}
+		$status_content = [
+			"warn_below_version" => 1,
+			"error_below_version" => 1,
+			"sync_status" => $this->sync_status,
+			"sync_status_message" => $sync_status_message,
+			"key_supervision_error" => $this->key_supervision_error,
+			"expire" => $expire,
+		];
+
+		$file_content = json_encode($status_content);
 		$filename = $config['monitoring']['status_file_path'] ?? '/var/local/keys-sync.status';
 		try {
 			file_put_contents("ssh2.sftp://{$sftp}{$filename}", $file_content);
