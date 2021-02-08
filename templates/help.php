@@ -166,8 +166,7 @@ $security_config = $this->get('security_config');
 		</div>
 		<div id="sync_setup" class="panel-collapse collapse">
 			<div class="panel-body">
-				<h5>Stage 1</h5>
-				<p>If SSH Key Authority is reporting "Key directory does not exist" for your server, then Stage 1 is required.</p>
+				<p>Use the following instructions to setup a target server for managing keys via SSH-Key-Authority:</p>
 				<ol>
 					<li>Create keys-sync account: <code>adduser --system --disabled-password --home /var/local/keys-sync --shell /bin/sh keys-sync</code>
 					<li>Change the permissions of <code>/var/local/keys-sync</code> to 711: <code>chmod 0711 /var/local/keys-sync</code>
@@ -177,20 +176,17 @@ $security_config = $this->get('security_config');
 					<?php if(isset($security_config['hostname_verification']) && $security_config['hostname_verification'] >= 3) { ?>
 					<li>Create <code>/var/local/keys-sync/.hostnames</code> text file (owned by keys-sync, permissions 0644) with the server's hostname in it</li>
 					<?php } ?>
-				</ol>
-				<h5>Verify Stage 1 success</h5>
-				<p>Once Stage 1 has been deployed to your server, trigger a resync from SSH Key Authority. The server should no longer have the "Key directory does not exist" warning after syncing (the "Using legacy sync method" warning is expected at this point instead). You can check the contents of the <code>/var/local/keys-sync</code> directory to make sure that the access looks right.</p>
-				<h5>Stage 2</h5>
-				<ol>
+					<li>Create an emtpy file <code><?php out($config['monitoring']['status_file_path'] ?? '/var/local/keys-sync.status') ?></code> (owned by keys-sync, permissions 0644)
 					<li>
 						Reconfigure SSH (<code>/etc/ssh/sshd_config</code>) to use:
 						<ul>
-							<li>"<code>AuthorizedKeysFile /var/local/keys-sync/%u</code>"
+							<li>"<code>AuthorizedKeysFile /var/local/keys-sync/%u</code>"<br>
+							    This setting stops any .ssh/authorized_keys* files from having any effect and transfers login authentication authority over to the /var/local/keys-sync directory.<br>
+							    Alternatively, you can keep the entries for .ssh/authorized_keys* and just add <code>/var/local/keys-sync/%u</code>. In this case, .ssh/authorized_keys* will stay active.
 							<li>"<code>StrictModes no</code>"
 						</ul>
 					<li>Restart SSH server
 				</ol>
-				<p>This stage stops any .ssh/authorized_keys* files from having any effect and transfers login authentication authority over to the /var/local/keys-sync directory.</p>
 				<p>After triggering a resync from SSH Key Authority, your server should be listed as "Synced successfully".</p>
 			</div>
 		</div>
