@@ -17,6 +17,7 @@ CREATE TABLE `external_key_occurrence` (
   `server` int(10) unsigned NOT NULL,
   `account_name` varchar(50) NOT NULL,
   `comment` mediumtext NOT NULL,
+  `appeared` datetime NOT NULL DEFAULT NOW(),
   FOREIGN KEY (`key`) REFERENCES `external_key` (`id`) ON DELETE CASCADE,
   FOREIGN KEY (`server`) REFERENCES `server` (`id`) ON DELETE CASCADE
 );
