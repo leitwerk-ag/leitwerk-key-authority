@@ -45,6 +45,10 @@ def collect_errors(status_info):
     elif expired <= curtime:
         errors += [(WARN, "The keys-sync status is expired (Got no update from ssh-key-authority before the expire-time was reached)")]
 
+    if len(status_info["accounts_with_unnoticed_keys"]) > 0:
+        account_list = "(" + ", ".join(status_info["accounts_with_unnoticed_keys"]) + ")"
+        errors += [(WARN, "There have been new external keys for at least 96 hours on following accounts: " + account_list)]
+
     if len(errors) == 0:
         errors = [(OK, "The keys-sync status is OK and up-to-date")]
 

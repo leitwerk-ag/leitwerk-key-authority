@@ -65,9 +65,11 @@ class ExternalKey extends Record {
 		while ($row = $result->fetch_assoc()) {
 			$external_key = $keys_assoc[$row['key']];
 			$attributes = [
+				'key' => $row['key'],
 				'server' => $row['server'],
 				'account_name' => $row['account_name'],
 				'comment' => $row['comment'],
+				'appeared' => $row['appeared'],
 			];
 			if ($with_hostnames) {
 				$attributes['hostname'] = $row['hostname'];

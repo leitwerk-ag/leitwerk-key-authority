@@ -597,12 +597,21 @@ class Server extends Record {
 		} else {
 			$sync_status_message = null;
 		}
+		$unnoticed_keys = $this->get_unnoticed_external_keys();
+		$accounts_with_unnoticed_keys = [];
+		foreach ($unnoticed_keys as $key) {
+			$account = $key->account_name;
+			if (!in_array($account, $accounts_with_unnoticed_keys)) {
+				$accounts_with_unnoticed_keys[] = $account;
+			}
+		}
 		$status_content = [
 			"warn_below_version" => 1,
 			"error_below_version" => 1,
 			"sync_status" => $this->sync_status,
 			"sync_status_message" => $sync_status_message,
 			"key_supervision_error" => $this->key_supervision_error,
+			"accounts_with_unnoticed_keys" => $accounts_with_unnoticed_keys,
 			"expire" => $expire,
 		];
 
@@ -614,6 +623,39 @@ class Server extends Record {
 			$this->key_supervision_error .= "Could not save status info in {$filename}: {$e->getMessage()}\n";
 			$this->update();
 		}
+	}
+
+	/**
+	 * Search for external keys that fulfill all of the following criteria:
+	 * - Appeared on this server at least 96 hours ago
+	 * - Are still on the server (have been seen at last scan)
+	 * - Are in status 'new' (It has not been decided yet if key is 'allowed' or 'denied')
+	 *
+	 * @return ExternalKeyOccurrence[] The key occurrences that fulfill the criteria
+	 */
+	public function get_unnoticed_external_keys() {
+		$stmt = $this->database->prepare("
+			SELECT external_key_occurrence.* FROM external_key_occurrence
+			LEFT JOIN external_key on external_key_occurrence.key = external_key.id
+			WHERE external_key_occurrence.server = ?
+			AND external_key_occurrence.appeared <= date_sub(now(), interval 96 hour)
+			AND external_key.status = 'new'
+		");
+		$stmt->bind_param("i", $this->id);
+		$stmt->execute();
+		$result = $stmt->get_result();
+		$unnoticed = [];
+		while ($row = $result->fetch_assoc()) {
+			$attributes = [
+				'key' => $row['key'],
+				'server' => $row['server'],
+				'account_name' => $row['account_name'],
+				'comment' => $row['comment'],
+				'appeared' => $row['appeared'],
+			];
+			$unnoticed[] = new ExternalKeyOccurrence($row['id'], $attributes);
+		}
+		return $unnoticed;
 	}
 }
 
