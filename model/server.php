@@ -582,6 +582,19 @@ class Server extends Record {
 	}
 
 	/**
+	 * Delete sync requests for this server and schedule a new request in 30 minutes
+	 */
+	public function reschedule_sync_request() {
+		global $sync_request_dir;
+
+		$this->delete_all_sync_requests();
+		$req = new SyncRequest();
+		$req->server_id = $this->id;
+		$req->execution_time = date("Y-m-d H:i:s", time() + 30 * 60);
+		$sync_request_dir->add_sync_request($req);
+	}
+
+	/**
 	 * Places status information in the file given by $config['monitoring']['status_file_path'] on this server.
 	 * The current sync status and the result of external key supervision are included in this file.
 	 *
