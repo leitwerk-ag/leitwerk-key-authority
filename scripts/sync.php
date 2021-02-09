@@ -240,7 +240,7 @@ function sync_server($id, $only_username = null, $preview = false) {
 	if(count($matching_servers) > 1) {
 		echo date('c')." {$hostname}: Multiple hosts with same IP address.\n";
 		$server->sync_report('sync failure', 'Multiple hosts with same IP address');
-		$server->delete_all_sync_requests();
+		$server->reschedule_sync_request();
 		report_all_accounts_failed($keyfiles);
 		return;
 	}
@@ -254,7 +254,7 @@ function sync_server($id, $only_username = null, $preview = false) {
 	pcntl_signal(SIGTERM, function($signal) use($server, $hostname, $keyfiles) {
 		echo date('c')." {$hostname}: SSH connection timed out.\n";
 		$server->sync_report('sync failure', 'SSH connection timed out');
-		$server->delete_all_sync_requests();
+		$server->reschedule_sync_request();
 		report_all_accounts_failed($keyfiles);
 		exit(1);
 	});
@@ -268,7 +268,7 @@ function sync_server($id, $only_username = null, $preview = false) {
 		} catch(ErrorException $e) {
 			echo date('c')." {$hostname}: Failed to connect.\n";
 			$server->sync_report('sync failure', 'SSH connection failed');
-			$server->delete_all_sync_requests();
+			$server->reschedule_sync_request();
 			report_all_accounts_failed($keyfiles);
 			return;
 		}
@@ -280,7 +280,7 @@ function sync_server($id, $only_username = null, $preview = false) {
 			if(strcmp($server->rsa_key_fingerprint, $fingerprint) !== 0) {
 				echo date('c')." {$hostname}: RSA key validation failed.\n";
 				$server->sync_report('sync failure', 'SSH host key verification failed');
-				$server->delete_all_sync_requests();
+				$server->reschedule_sync_request();
 				report_all_accounts_failed($keyfiles);
 				return;
 			}
@@ -290,7 +290,7 @@ function sync_server($id, $only_username = null, $preview = false) {
 			if(count($matching_servers) > 1) {
 				echo date('c')." {$hostname}: Multiple hosts with same host key.\n";
 				$server->sync_report('sync failure', 'Multiple hosts with same host key');
-				$server->delete_all_sync_requests();
+				$server->reschedule_sync_request();
 				report_all_accounts_failed($keyfiles);
 				return;
 			}
@@ -304,7 +304,7 @@ function sync_server($id, $only_username = null, $preview = false) {
 			if($attempt == 'root') {
 				echo date('c')." {$hostname}: Public key authentication failed.\n";
 				$server->sync_report('sync failure', 'SSH authentication failed');
-				$server->delete_all_sync_requests();
+				$server->reschedule_sync_request();
 				report_all_accounts_failed($keyfiles);
 				return;
 			}
@@ -315,7 +315,7 @@ function sync_server($id, $only_username = null, $preview = false) {
 	} catch(ErrorException $e) {
 		echo date('c')." {$hostname}: SFTP subsystem setup failed.\n";
 		$server->sync_report('sync failure', 'SFTP subsystem failed');
-		$server->delete_all_sync_requests();
+		$server->reschedule_sync_request();
 		report_all_accounts_failed($keyfiles);
 		return;
 	}
@@ -349,7 +349,7 @@ function sync_server($id, $only_username = null, $preview = false) {
 					// 3+ = Abort if file does not exist
 					echo date('c')." {$hostname}: Hostnames file missing.\n";
 					$server->sync_report('sync failure', 'Hostnames file missing');
-					$server->delete_all_sync_requests();
+					$server->reschedule_sync_request();
 					report_all_accounts_failed($keyfiles);
 					$server->update_status_file($sftp);
 					return;
@@ -367,7 +367,7 @@ function sync_server($id, $only_username = null, $preview = false) {
 		if(!in_array($hostname, $allowed_hostnames)) {
 			echo date('c')." {$hostname}: Hostname check failed (allowed: ".implode(", ", $allowed_hostnames).").\n";
 			$server->sync_report('sync failure', 'Hostname check failed');
-			$server->delete_all_sync_requests();
+			$server->reschedule_sync_request();
 			report_all_accounts_failed($keyfiles);
 			$server->update_status_file($sftp);
 			return;
