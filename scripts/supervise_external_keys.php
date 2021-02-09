@@ -194,6 +194,9 @@ function read_server_keys(Server $server, string &$error_string, &$connection, &
 	} catch(ErrorException $e) {
 		throw new Exception("SFTP subsystem setup failed.");
 	}
+	if (!external_keys_active($sftp)) {
+		return [];
+	}
 	$user_entries = file("ssh2.sftp://$sftp/etc/passwd");
 	$user_entries = array_map('parse_user_entry', $user_entries);
 	$user_entries = array_filter($user_entries, function($entry) {
@@ -213,6 +216,24 @@ function read_server_keys(Server $server, string &$error_string, &$connection, &
 	}
 
 	return $keys;
+}
+
+/**
+ * Check if external keys (~/.ssh/authorized_keys) are activated in the sshd-config
+ * of a target server.
+ *
+ * @param handle $sftp An sftp handle connected to the server to check
+ * @return bool true if they are active (users can login using keys in authorized_keys), false if they are ignored
+ */
+function external_keys_active($sftp) {
+	$config_lines = file("ssh2.sftp://$sftp/etc/ssh/sshd_config");
+	foreach ($config_lines as $line) {
+		if (strpos(strtolower($line), "authorizedkeysfile") === 0) {
+			return strpos($line, ".ssh/authorized_keys") !== false;
+		}
+	}
+	// configuration not found, by default external keys are activated
+	return true;
 }
 
 /**
