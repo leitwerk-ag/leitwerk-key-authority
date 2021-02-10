@@ -40,6 +40,7 @@
 				<th class="fingerprint">Fingerprint</th>
 				<th></th>
 				<th>Creation Date</th>
+				<th>Deletion Date</th>
 				<th>Size</th>
 				<th>Comment</th>
 				<th>Actions</th>
@@ -47,7 +48,7 @@
 		</thead>
 		<tbody>
 			<?php foreach($this->get('user_keys') as $key) { ?>
-			<tr<?php if ($key->deleted) { out(' class="deleted"', ESC_NONE); } ?>>
+			<tr<?php if ($key->deletion_date !== null) { out(' class="deleted"', ESC_NONE); } ?>>
 				<td><?php out($key->type) ?></td>
 				<td>
 					<a href="<?php outurl('/users/'.urlencode($this->get('uid')).'/pubkeys/'.urlencode($key->id).'#info')?>">
@@ -60,10 +61,11 @@
 					<?php if(count($key->list_destination_rules()) > 0) { ?><a href="<?php outurl('/users/'.urlencode($this->get('uid')).'/pubkeys/'.urlencode($key->id).'#dest')?>"><span class="glyphicon glyphicon-pushpin" title="Destination-restricted"></span></a><?php } ?>
 				</td>
 				<td><?php out($key->format_creation_date()) ?></td>
+				<td><?php out($key->format_deletion_date()) ?></td>
 				<td><?php out($key->keysize) ?></td>
 				<td><?php out($key->comment) ?></td>
 				<td>
-					<?php if ($key->deleted) { ?>
+					<?php if ($key->deletion_date !== null) { ?>
 						<i class="glyphicon glyphicon-remove"></i> Deleted
 					<?php } else { ?>
 						<a href="<?php outurl('/users/'.urlencode($this->get('uid')).'/pubkeys/'.urlencode($key->id))?>" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-cog"></span> Manage public key</a>

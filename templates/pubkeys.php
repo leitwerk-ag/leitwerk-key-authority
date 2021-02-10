@@ -112,6 +112,7 @@ function show_key(ExternalKey $key, array $buttons, string $relative_request_url
 				<tr>
 					<th class="fingerprint">Fingerprint</th>
 					<th>Creation Date</th>
+					<th>Deletion Date</th>
 					<th>Type</th>
 					<th>Size</th>
 					<th>Comment</th>
@@ -123,7 +124,7 @@ function show_key(ExternalKey $key, array $buttons, string $relative_request_url
 				<?php
 				foreach($this->get('pubkeys') as $pubkey) {
 				?>
-				<tr<?php if ($pubkey->deleted) { out(' class="deleted"', ESC_NONE); } ?>>
+				<tr<?php if ($pubkey->deletion_date !== null) { out(' class="deleted"', ESC_NONE); } ?>>
 					<td>
 						<a href="<?php outurl('/pubkeys/'.urlencode($pubkey->id))?>">
 							<span class="fingerprint_md5"><?php out($pubkey->fingerprint_md5)?></span>
@@ -131,6 +132,7 @@ function show_key(ExternalKey $key, array $buttons, string $relative_request_url
 						</a>
 					</td>
 					<td><?php out($pubkey->format_creation_date()) ?></td>
+					<td><?php out($pubkey->format_deletion_date()) ?></td>
 					<td class="nowrap"><?php out($pubkey->type)?></td>
 					<td<?php if($pubkey->keysize < 4095) out(' class="danger"', ESC_NONE)?>><?php out($pubkey->keysize)?></td>
 					<td><?php out($pubkey->comment)?></td>
@@ -153,7 +155,7 @@ function show_key(ExternalKey $key, array $buttons, string $relative_request_url
 						?>
 					</td>
 					<td>
-						<?php if ($pubkey->deleted) { ?>
+						<?php if ($pubkey->deletion_date !== null) { ?>
 							<i class="glyphicon glyphicon-remove"></i> Deleted
 						<?php } ?>
 					</td>

@@ -15,6 +15,6 @@
 ## limitations under the License.
 ##
 foreach($this->get('pubkeys') as $pubkey) {
-	$delete_prefix = $pubkey->deleted ? '# (deleted) ' : '';
+	$delete_prefix = $key->deletion_date !== null ? '# (deleted) ' : '';
 	out($delete_prefix . $pubkey->export()."\n", ESC_NONE);
 }

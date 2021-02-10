@@ -38,7 +38,7 @@ $owner = $this->get('pubkey')->owner;
 <?php if($this->get('user_is_owner') || $this->get('admin')) { ?>
 <ul class="nav nav-tabs">
 	<li><a href="#info" data-toggle="tab">Information</a></li>
-	<?php if (!$this->get('pubkey')->deleted) { ?>
+	<?php if ($this->get('pubkey')->deletion_date === null) { ?>
 		<li><a href="#sig" data-toggle="tab">Key signing</a></li>
 		<li><a href="#dest" data-toggle="tab">Destination restrictions</a></li>
 	<?php } ?>
@@ -47,7 +47,7 @@ $owner = $this->get('pubkey')->owner;
 <div class="tab-content">
 	<div class="tab-pane <?php if(!$this->get('user_is_owner') || $this->get('admin')) out(' active') ?>" id="info">
 		<h2 class="sr-only">Information</h2>
-		<?php if ($this->get('pubkey')->deleted) { ?>
+		<?php if ($this->get('pubkey')->deletion_date !== null) { ?>
 			<div class="alert alert-danger">This key has been deleted</div>
 		<?php } ?>
 		<dl>
@@ -55,6 +55,8 @@ $owner = $this->get('pubkey')->owner;
 			<dd><pre><?php out($this->get('pubkey')->export())?></pre></dd>
 			<dt>Creation Date</dt>
 			<dd><?php out($this->get('pubkey')->format_creation_date()) ?></dd>
+			<dt>Deletion Date</dt>
+			<dd><?php out($this->get('pubkey')->format_deletion_date()) ?></dd>
 			<dt>Key size</dt>
 			<dd><?php out($this->get('pubkey')->keysize)?></dd>
 			<dt>Fingerprint (MD5)</dt>
@@ -67,7 +69,7 @@ $owner = $this->get('pubkey')->owner;
 			<dd><pre class="ascii-art"><?php out($this->get('pubkey')->randomart_sha256)?></pre></dd>
 		</dl>
 	</div>
-	<?php if(($this->get('user_is_owner') || $this->get('admin')) && !$this->get('pubkey')->deleted) { ?>
+	<?php if(($this->get('user_is_owner') || $this->get('admin')) && $this->get('pubkey')->deletion_date === null) { ?>
 	<div class="tab-pane" id="sig">
 		<h2 class="sr-only">Key signing</h2>
 		<form method="post" action="<?php outurl($this->data->relative_request_url)?>" enctype="multipart/form-data">
