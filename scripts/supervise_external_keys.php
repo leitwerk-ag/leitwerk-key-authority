@@ -242,7 +242,7 @@ function external_keys_active($sftp) {
  *
  * @param array $entries Reference to the array of entries to fill
  * @param string $user Username to add to the entries
- * @param $ssh The ssh connection resource, will be used to execute a 'test -w' command
+ * @param resource $ssh The ssh connection resource to the target server
  * @param string $sftp_url Resource-URL for the sftp connection to the server
  * @param string $filename Name of the authorized_keys file to scan (If it does not exist, it is ignored)
  * @param string &$error_string Reference to a string variable where error messages are appended
@@ -250,7 +250,7 @@ function external_keys_active($sftp) {
  */
 function add_entries(array &$entries, string $user, $ssh, string $sftp_url, string $filename, string &$error_string, $keys_in_db_assoc) {
 	if (!file_exists($sftp_url . $filename)) {
-		check_missing_file($sftp_url, $filename, $error_string);
+		check_missing_file($ssh, $filename, $error_string);
 		return;
 	}
 	try {
@@ -307,25 +307,27 @@ function add_entries(array &$entries, string $user, $ssh, string $sftp_url, stri
 /**
  * Check if the specified file is actually non-existent (in which case nothing happens)
  * If the file is instead not accessible because of permissions, an error message will be appended to $error_string
- * This function works by iteratively checking directories upwards, if they are readable.
  *
- * @param string $sftp_url Resource-URL for the sftp connection to the server
- * @param string $filename Name of the authorized_keys file to scan (If it does not exist, it is ignored)
+ * @param resource $ssh The ssh connection resource to the target server
+ * @param string $filename Name of the authorized_keys file to scan
  * @param string &$error_string Reference to a string variable where error messages are appended
  */
-function check_missing_file(string $sftp_url, string $filename, string &$error_string) {
-	$dir = $filename;
-	do {
-		$dir = dirname($dir);
-		if (file_exists($sftp_url . $dir)) {
-			if (!is_readable($sftp_url . $dir)) {
-				// The directory is not readable - could not truly check the existence of the file.
-				// This is an error.
-				$error_string .= "Could not check if $filename exists, because $dir is not readable.\n";
-			} // else: The directory above is readable, so the file does actually not exist. No error.
-			return;
+function check_missing_file($ssh, string $filename, string &$error_string) {
+	$escaped_filename = escapeshellarg($filename);
+	$stream = ssh2_exec($ssh, "LANG=en_US.UTF-8 head -c 0 $escaped_filename");
+	$stderr = ssh2_fetch_stream($stream, SSH2_STREAM_STDERR);
+	stream_set_blocking($stderr, true);
+	$stderr_output = stream_get_contents($stderr);
+	if (preg_match("%: ([^:]+)\n\$%", $stderr_output, $matches)) {
+		$err = $matches[1];
+		if ($err !== "No such file or directory") {
+			$error_string .= "Could not read $filename: $err\n";
 		}
-	} while ($dir != "/" && $dir != ".");
+	} else if ($stderr_output === "") {
+		$error_string .= "Failed to check if $filename exists: Got no error message\n";
+	} else {
+		$error_string .= "Failed to check if $filename exists: $stderr_output";
+	}
 }
 
 /**
