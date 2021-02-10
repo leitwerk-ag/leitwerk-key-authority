@@ -237,6 +237,18 @@ class PublicKey extends Record {
 	}
 
 	/**
+	 * Get the creation date of this key in a format ready to display to the user.
+	 *
+	 * @return string The formatted date
+	 */
+	public function format_deletion_date() {
+		if ($this->deletion_date === null) {
+			return "-";
+		}
+		return date("d M Y", strtotime($this->deletion_date));
+	}
+
+	/**
 	* Add a GPG signature for this public key.
 	* @param PublicKeySignature $sig GPG signature to add
 	*/

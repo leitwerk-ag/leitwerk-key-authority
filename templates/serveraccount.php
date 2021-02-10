@@ -348,7 +348,7 @@ default: $sync_class = 'warning'; $sync_message = 'Not synced'; break;
 				</thead>
 				<tbody>
 					<?php foreach($this->get('pubkeys') as $key) { ?>
-					<tr<?php if ($key->deleted) { out(' class="deleted"', ESC_NONE); } ?>>
+					<tr<?php if ($key->deletion_date !== null) { out(' class="deleted"', ESC_NONE); } ?>>
 						<td><?php out($key->type) ?></td>
 						<td>
 							<a href="<?php outurl('/pubkeys/'.urlencode($key->id))?>">
@@ -364,7 +364,7 @@ default: $sync_class = 'warning'; $sync_message = 'Not synced'; break;
 						<td><?php out($key->keysize) ?></td>
 						<td><?php out($key->comment) ?></td>
 						<td>
-							<?php if ($key->deleted) { ?>
+							<?php if ($key->deletion_date !== null) { ?>
 								<i class="glyphicon glyphicon-remove"></i> Deleted
 							<?php } else { ?>
 								<button type="submit" name="delete_public_key" value="<?php out($key->id) ?>" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-trash"></span> Delete public key</button>

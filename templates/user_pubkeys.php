@@ -23,6 +23,8 @@
 		<dd><pre><?php out($pubkey->export())?></pre></dd>
 		<dt>Creation Date</dt>
 		<dd><?php out($pubkey->format_creation_date()) ?></dd>
+		<dt>Deletion Date</dt>
+		<dd><?php out($pubkey->format_deletion_date()) ?></dd>
 		<dt>Key size</dt>
 		<dd><?php out($pubkey->keysize)?></dd>
 		<dt>Fingerprint (MD5)</dt>
@@ -30,7 +32,7 @@
 		<dt>Fingerprint (SHA256)</dt>
 		<dd><?php out($pubkey->fingerprint_sha256)?></dd>
 		<dt>Status</dt>
-		<dd><?php out($pubkey->deleted ? 'Deleted' : 'Active') ?>
+		<dd><?php out($pubkey->deletion_date !== null ? 'Deleted' : 'Active') ?>
 	</dl>
 </div>
 <?php } ?>

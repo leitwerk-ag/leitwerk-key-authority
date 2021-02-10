@@ -160,7 +160,7 @@ abstract class Entity extends Record {
 	*/
 	public function delete_public_key(PublicKey $key) {
 		if(is_null($this->entity_id)) throw new BadMethodCallException('Entity must be in directory before public keys can be deleted');
-		$stmt = $this->database->prepare("UPDATE public_key SET deleted = true WHERE entity_id = ? AND id = ?");
+		$stmt = $this->database->prepare("UPDATE public_key SET deletion_date = NOW() WHERE entity_id = ? AND id = ?");
 		$stmt->bind_param('dd', $this->entity_id, $key->id);
 		$stmt->execute();
 		$stmt->close();
@@ -202,9 +202,9 @@ abstract class Entity extends Record {
 		if ($deleted === null) {
 			$deleted_condition = "";
 		} else if ($deleted) {
-			$deleted_condition = "AND deleted = true";
+			$deleted_condition = "AND deletion_date is not null";
 		} else {
-			$deleted_condition = "AND deleted = false";
+			$deleted_condition = "AND deletion_date is null";
 		}
 		$stmt = $this->database->prepare("
 			SELECT public_key.*, COUNT(public_key_dest_rule.id) AS dest_rule_count
@@ -213,7 +213,7 @@ abstract class Entity extends Record {
 			WHERE entity_id = ?
 			$deleted_condition
 			GROUP BY public_key.id
-			ORDER BY deleted, id
+			ORDER BY (deletion_date is not null), id
 		");
 		$stmt->bind_param('d', $this->entity_id);
 		$stmt->execute();
@@ -261,7 +261,7 @@ abstract class Entity extends Record {
 			SELECT COUNT(*) as num
 			FROM public_key
 			WHERE entity_id = ?
-			AND deleted = true
+			AND deletion_date is not null
 		");
 		$stmt->bind_param('d', $this->entity_id);
 		$stmt->execute();
