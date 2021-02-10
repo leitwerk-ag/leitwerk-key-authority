@@ -190,7 +190,7 @@
 				<label for="account_name" class="sr-only">Account name</label>
 				<input type="text" id="account_name" name="account_name" class="form-control" placeholder="Account name" required pattern=".*[^\s].*">
 			</div>
-			<button type="submit" name="add_account" value="1" class="btn btn-primary">Manage this account with SSH Key Authority</button>
+			<button type="submit" name="add_account" value="1" class="btn btn-primary">Manage this account with Leitwerk Key Authority</button>
 		</form>
 	</div>
 	<div class="tab-pane fade" id="admins">
@@ -289,7 +289,7 @@
 					<div class="radio">
 						<label class="text-success">
 							<input type="radio" name="key_management" value="keys"<?php if($this->get('server')->key_management == 'keys') out(' checked') ?>>
-							SSH keys managed and synced by SSH Key Authority
+							SSH keys managed and synced by Leitwerk Key Authority
 						</label>
 					</div>
 					<div class="radio">
@@ -371,7 +371,7 @@
 				<dd>
 					<?php
 					switch($this->get('server')->key_management) {
-					case 'keys': out('SSH keys managed and synced by SSH Key Authority'); break;
+					case 'keys': out('SSH keys managed and synced by Leitwerk Key Authority'); break;
 					case 'none': out('Disabled - server has no key management'); break;
 					case 'other': out('Disabled - SSH keys managed by another system'); break;
 					case 'decommissioned': out('Disabled - server has been decommissioned'); break;

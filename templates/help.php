@@ -48,13 +48,13 @@ $security_config = $this->get('security_config');
 		<div id="concepts" class="panel-collapse collapse">
 			<div class="panel-body">
 				<h3>Iconography</h3>
-				<p>Most objects that are known by SSH Key Authority are represented by icons:</p>
+				<p>Most objects that are known by Leitwerk Key Authority are represented by icons:</p>
 				<h4><span class="glyphicon glyphicon-hdd"></span> Servers</h4>
 				<p>Physical or virtual servers.</p>
 				<h4><span class="glyphicon glyphicon-log-in"></span> Server accounts</h4>
 				<p>Accounts on servers (eg. root@myserver is a server account).</p>
 				<h4><span class="glyphicon glyphicon-user"></span> Users</h4>
-				<p>Users of SSH Key Authority.</p>
+				<p>Users of Leitwerk Key Authority.</p>
 				<h4><span class="glyphicon glyphicon-list-alt"></span> Groups</h4>
 				<p>Collections of users or server accounts.</p>
 			</div>
@@ -81,13 +81,13 @@ $security_config = $this->get('security_config');
 		<div class="panel-heading">
 			<h2 class="panel-title">
 				<a data-toggle="collapse" data-parent="#help" href="#add_server">
-					Adding a server to SSH Key Authority
+					Adding a server to Leitwerk Key Authority
 				</a>
 			</h2>
 		</div>
 		<div id="add_server" class="panel-collapse collapse">
 			<div class="panel-body">
-				<p>Contact <a href="mailto:<?php out($admin_mail)?>"><?php out($admin_mail)?></a> to have your server(s) added to SSH Key Authority.</p>
+				<p>Contact <a href="mailto:<?php out($admin_mail)?>"><?php out($admin_mail)?></a> to have your server(s) added to Leitwerk Key Authority.</p>
 			</div>
 		</div>
 	</div>
@@ -126,12 +126,12 @@ $security_config = $this->get('security_config');
 						</ul>
 					</dd>
 					<dt>Multiple hosts with same IP address</dt>
-					<dd>At least one other host managed by SSH Key Authority resolves to the same IP address as your server.  SSH Key Authority will refuse to sync to either server until this is resolved.</dd>
+					<dd>At least one other host managed by Leitwerk Key Authority resolves to the same IP address as your server.  Leitwerk Key Authority will refuse to sync to either server until this is resolved.</dd>
 					<?php if(isset($security_config['hostname_verification']) && $security_config['hostname_verification'] >= 3) { ?>
 					<dt>Hostnames file missing</dt>
-					<dd>The <code>/var/local/keys-sync/.hostnames</code> file does not exist on the server. SSH Key Authority uses the contents of this file to verify that it is allowed to sync to your server.</dd>
+					<dd>The <code>/var/local/keys-sync/.hostnames</code> file does not exist on the server. Leitwerk Key Authority uses the contents of this file to verify that it is allowed to sync to your server.</dd>
 					<dt>Hostname check failed</dt>
-					<dd>The server name was not found in <code>/var/local/keys-sync/.hostnames</code> when SSH Key Authority tried to sync to your server.</dd>
+					<dd>The server name was not found in <code>/var/local/keys-sync/.hostnames</code> when Leitwerk Key Authority tried to sync to your server.</dd>
 					<?php } ?>
 				</dl>
 			</div>
@@ -166,7 +166,7 @@ $security_config = $this->get('security_config');
 		</div>
 		<div id="sync_setup" class="panel-collapse collapse">
 			<div class="panel-body">
-				<p>Use the following instructions to setup a target server for managing keys via SSH-Key-Authority:</p>
+				<p>Use the following instructions to setup a target server for managing keys via Leitwerk Key Authority:</p>
 				<ol>
 					<li>Create keys-sync account: <code>adduser --system --disabled-password --home /var/local/keys-sync --shell /bin/sh keys-sync</code>
 					<li>Change the permissions of <code>/var/local/keys-sync</code> to 711: <code>chmod 0711 /var/local/keys-sync</code>
@@ -187,7 +187,7 @@ $security_config = $this->get('security_config');
 						</ul>
 					<li>Restart SSH server
 				</ol>
-				<p>After triggering a resync from SSH Key Authority, your server should be listed as "Synced successfully".</p>
+				<p>After triggering a resync from Leitwerk Key Authority, your server should be listed as "Synced successfully".</p>
 			</div>
 		</div>
 	</div>
@@ -225,19 +225,19 @@ $security_config = $this->get('security_config');
 					<li>Click "Manage account" for the relevant account.</li>
 					<li>In the "Add user to account" form, enter the user's intranet account name and submit.</li>
 				</ol>
-				<p>For server-to-server access, assuming that both of the servers involved are managed by SSH Key Authority:</p>
+				<p>For server-to-server access, assuming that both of the servers involved are managed by Leitwerk Key Authority:</p>
 				<p>Example: <code>foo@source.example.com</code> needs SSH access to <code>bar@destination.example.com</code></p>
 				<ol>
 					<li>Go to the admin page for source.example.com (ie. <code><?php out($baseurl)?>/servers/source.example.com</code>).</li>
-					<li>Add the "foo" account to keys ("Manage this account with SSH Key Authority") if it is not already listed.</li>
+					<li>Add the "foo" account to keys ("Manage this account with Leitwerk Key Authority") if it is not already listed.</li>
 					<li>Go to the manage account page for "foo".</li>
 					<li>On the Public keys tab, add the SSH public key for the foo@source.example.com account.</li>
 					<li>Go to the admin page for destination.example.com (ie. <code><?php out($baseurl)?>/servers/destination.example.com</code>).</li>
-					<li>Add the "bar" account to keys ("Manage this account with SSH Key Authority") if it is not already listed.</li>
+					<li>Add the "bar" account to keys ("Manage this account with Leitwerk Key Authority") if it is not already listed.</li>
 					<li>Go to the manage account page for "bar".</li>
 					<li>On the Access tab, add server-to-server access for foo@source.example.com.</li>
 				</ol>
-				<p>In the above example if source.example.com is not yet known by SSH Key Authority, please contact <a href="mailto:<?php out($admin_mail)?>"><?php out($admin_mail)?></a> to add it to the system.</p>
+				<p>In the above example if source.example.com is not yet known by Leitwerk Key Authority, please contact <a href="mailto:<?php out($admin_mail)?>"><?php out($admin_mail)?></a> to add it to the system.</p>
 			</div>
 		</div>
 	</div>

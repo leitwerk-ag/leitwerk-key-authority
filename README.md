@@ -1,4 +1,4 @@
-SKA - SSH Key Authority
+LKA - Leitwerk Key Authority
 =======================
 
 *Please see the [Security Advisories](#security-advisories) section below for a recently addressed security issue*
@@ -18,18 +18,6 @@ Features
 * Specify SSH access options such as `command=`, `nopty` etc on your access rules.
 * All access changes are logged to the database and to the system logs. Granting of access is also reported by email.
 * Be notified when a server becomes orphaned (has no active administrators).
-
-Demo
-----
-
-You can view the SSH Key Authority in action on the [demonstration server](https://ska.xiven.com/).
-
-Use one of the following sets of username / password credentials to log in:
-
-* testuser / testuser - normal user with admin access granted to a few servers
-* testadmin / testadmin - admin user
-
-All data on this demonstration server is reset nightly at 00:00 UTC.
 
 Requirements
 ------------
@@ -51,15 +39,15 @@ Installation
 
 2.  Add the following directives to your Apache configuration (eg. virtual host config):
 
-        DocumentRoot /path/to/ska/public_html
+        DocumentRoot /path/to/lka/public_html
         DirectoryIndex init.php
         FallbackResource /init.php
 
 3.  Create a MySQL user and database (run in MySQL shell):
 
-        CREATE USER 'ska-user'@'localhost' IDENTIFIED BY 'password';
-        CREATE DATABASE `ska-db` DEFAULT CHARACTER SET utf8mb4;
-        GRANT ALL ON `ska-db`.* to 'ska-user'@'localhost';
+        CREATE USER 'lka-user'@'localhost' IDENTIFIED BY 'password';
+        CREATE DATABASE `lka-db` DEFAULT CHARACTER SET utf8mb4;
+        GRANT ALL ON `lka-db`.* to 'lka-user'@'localhost';
 
 4.  Copy the file `config/config-sample.ini` to `config/config.ini` and edit the settings as required.
 
@@ -68,12 +56,12 @@ Installation
 
 6.  Set `scripts/ldap_update.php` to run on a regular cron job.
 
-7.  Generate an SSH key pair to synchronize with. SSH Key Authority will expect to find the files as `config/keys-sync` and `config/keys-sync.pub` for the private and public keys respectively.
+7.  Generate an SSH key pair to synchronize with. Leitwerk Key Authority will expect to find the files as `config/keys-sync` and `config/keys-sync.pub` for the private and public keys respectively.
 
 8.  Install the SSH key synchronization daemon. For systemd:
 
     1.  Copy `services/systemd/keys-sync.service` to `/etc/systemd/system/`
-    2.  Modify `ExecStart` path and `User` as necessary. If SSH Key Authority is installed under `/home`, disable `ProtectHome`.
+    2.  Modify `ExecStart` path and `User` as necessary. If Leitwerk Key Authority is installed under `/home`, disable `ProtectHome`.
     3.  `systemctl daemon-reload`
     4.  `systemctl enable keys-sync.service`
 
@@ -91,7 +79,7 @@ Anyone in the LDAP group defined under `admin_group_cn` in `config/config.ini` w
 Key distribution
 ----------------
 
-SSH Key Authority distributes authorized keys to your servers via SSH. It does this by:
+Leitwerk Key Authority distributes authorized keys to your servers via SSH. It does this by:
 
 1.  Connecting to the server with SSH, authorizing as the `keys-sync` user.
 2.  Writing the appropriate authorized keys to named user files in `/var/local/keys-sync/` (eg. all authorized keys for the root user will be written to `/var/local/keys-sync/root`).
@@ -129,7 +117,7 @@ Screenshots
 
 Security advisories
 -------------------
-* [SKA security advisory: SSH port redirection attack](https://github.com/operasoftware/ssh-key-authority/wiki/SKA-security-advisory%3A-SSH-port-redirection-attack)
+* [security advisory: SSH port redirection attack](https://github.com/operasoftware/ssh-key-authority/wiki/SKA-security-advisory%3A-SSH-port-redirection-attack)
 
 License
 -------

@@ -16,7 +16,7 @@
 ##
 ?>
 <h1>Keys management</h1>
-<p>Welcome to the SSH Key Authority server.</p>
+<p>Welcome to the Leitwerk Key Authority server.</p>
 <?php if(count($this->get('user_keys')) == 0) { ?>
 <h2>Getting started</h2>
 <p>To start using the key management system, you must first generate a "key pair".  The instructions for doing this vary based on your computer's Operating System (OS).</p>

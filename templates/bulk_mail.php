@@ -16,7 +16,7 @@
 ##
 ?>
 <h1>Bulk mail <?php out(str_replace('_', ' ', $this->get('recipients')))?></h1>
-<div class="alert alert-warning">This form will send a mail to <strong>all</strong> <?php out($this->get('rcpt_desc'))?> the SSH Key Authority system!</div>
+<div class="alert alert-warning">This form will send a mail to <strong>all</strong> <?php out($this->get('rcpt_desc'))?> the Leitwerk Key Authority system!</div>
 <form method="post" action="<?php outurl($this->data->relative_request_url)?>">
 	<?php out($this->get('active_user')->get_csrf_field(), ESC_NONE) ?>
 	<div class="form-group">
@@ -25,7 +25,7 @@
 	</div>
 	<div class="form-group">
 		<label for="body">Body</label>
-		<textarea class="form-control monospace" rows="20" id="body" name="body" required>You are being sent this mail as a <?php out($this->get('rcpt_role'))?> the SSH Key Authority system.
+		<textarea class="form-control monospace" rows="20" id="body" name="body" required>You are being sent this mail as a <?php out($this->get('rcpt_role'))?> the Leitwerk Key Authority system.
 
 </textarea>
 	</div>
