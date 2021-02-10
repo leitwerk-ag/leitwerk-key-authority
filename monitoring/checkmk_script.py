@@ -56,8 +56,8 @@ def collect_errors(status_info):
     exp_tup = email.utils.parsedate_tz(status_info["expire"])
     expired = calendar.timegm(exp_tup[0:6]) - exp_tup[9]
     curtime = time.time()
-    if expired + 24*60*60 <= curtime:
-        errors += [(CRIT, "The keys-sync status is expired since more than 24 hours (Got no update from ssh-key-authority during this time)")]
+    if expired + 48*60*60 <= curtime:
+        errors += [(CRIT, "The keys-sync status is expired since more than 48 hours (Got no update from ssh-key-authority during this time)")]
     elif expired <= curtime:
         errors += [(WARN, "The keys-sync status is expired (Got no update from ssh-key-authority before the expire-time was reached)")]
 
