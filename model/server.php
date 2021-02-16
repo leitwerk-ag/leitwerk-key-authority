@@ -558,12 +558,18 @@ class Server extends Record {
 	}
 
 	/**
-	* List all pending sync requests for this server.
+	* List all current pending sync requests for this server. (No scheduled requests in future)
 	* @return array of SyncRequest objects
 	*/
 	public function list_sync_requests() {
-		$stmt = $this->database->prepare("SELECT * FROM sync_request WHERE server_id = ? ORDER BY account_name");
-		$stmt->bind_param('d', $this->id);
+		$stmt = $this->database->prepare(
+			"SELECT * FROM sync_request
+			WHERE server_id = ?
+			AND (execution_time IS NULL OR execution_time <= ?)
+			ORDER BY account_name"
+				);
+		$curdate = date("Y-m-d H:i:s");
+		$stmt->bind_param('ds', $this->id, $curdate);
 		$stmt->execute();
 		$result = $stmt->get_result();
 		$reqs = array();
