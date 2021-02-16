@@ -3,7 +3,7 @@ To install the sync service
 
 On a systemd system:
   1) Copy the systemd/keys-sync.service file to /etc/systemd/system/
-  2) Modify ExecStart path and User as necessary. If SSH Key Authority is installed under /home, disable ProtectHome.
+  2) Modify ExecStart path and User as necessary. If Leitwerk Key Authority is installed under /home, disable ProtectHome.
   3) Run: systemctl daemon-reload
   4) Run: systemctl enable keys-sync.service
 

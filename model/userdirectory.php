@@ -1,6 +1,7 @@
 <?php
 ##
 ## Copyright 2013-2017 Opera Software AS
+## Modifications Copyright 2021 Leitwerk AG
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -98,6 +99,7 @@ class UserDirectory extends DBDirectory {
 			$this->cache_uid[$uid] = $user;
 			$user->get_details_from_ldap();
 			$this->add_user($user);
+			$user->update_group_memberships();
 		}
 		$stmt->close();
 		return $user;

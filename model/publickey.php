@@ -1,6 +1,7 @@
 <?php
 ##
 ## Copyright 2013-2017 Opera Software AS
+## Modifications Copyright 2021 Leitwerk AG
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -175,6 +176,36 @@ class PublicKey extends Record {
 	}
 
 	/**
+	 * Provide the key in OpenSSH-text-format, but use 'username, creation date' as comment.
+	 *
+	 * @param User $owner Owner of this key, to display the name in the comment section
+	 * @return string key in OpenSSH-text-format
+	 */
+	public function export_userkey_with_fixed_comment(User $owner) {
+		if ($this->creation_date === null) {
+			$date = '';
+		} else {
+			$date = ', ' . $this->creation_date;
+		}
+		return "{$this->type} {$this->keydata} {$owner->name}{$date}";
+	}
+
+	/**
+	 * Provide the key in OpenSSH-text-format, but use 'username, creation date' as comment.
+	 *
+	 * @param ServerAccount $owner Owner of this key, to display the name in the comment section
+	 * @return string key in OpenSSH-text-format
+	 */
+	public function export_serverkey_with_fixed_comment(ServerAccount $owner) {
+		if ($this->creation_date === null) {
+			$date = '';
+		} else {
+			$date = ', ' . $this->creation_date;
+		}
+		return "{$this->type} {$this->keydata} {$owner->name}@{$owner->server->hostname}{$date}";
+	}
+
+	/**
 	* Provide a text summary of details about the key, including hashes, randomart and link to view it.
 	* @return string text summary
 	*/
@@ -192,6 +223,30 @@ class PublicKey extends Record {
 		}
 		$output .= "\nYou can also view the key at <$url>";
 		return $output;
+	}
+
+	/**
+	 * Get the creation date of this key in a format ready to display to the user.
+	 *
+	 * @return string The formatted date
+	 */
+	public function format_creation_date() {
+		if ($this->creation_date === null) {
+			return "-";
+		}
+		return date("d M Y", strtotime($this->creation_date));
+	}
+
+	/**
+	 * Get the creation date of this key in a format ready to display to the user.
+	 *
+	 * @return string The formatted date
+	 */
+	public function format_deletion_date() {
+		if ($this->deletion_date === null) {
+			return "-";
+		}
+		return date("d M Y", strtotime($this->deletion_date));
 	}
 
 	/**

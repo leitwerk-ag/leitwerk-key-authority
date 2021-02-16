@@ -1,6 +1,7 @@
 <?php
 ##
 ## Copyright 2013-2017 Opera Software AS
+## Modifications Copyright 2021 Leitwerk AG
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -136,6 +137,11 @@ class ServerDirectory extends DBDirectory {
 				case 'key_management':
 				case 'sync_status':
 					$where[] = "server.$field IN ('".implode("', '", array_map(array($this->database, 'escape_string'), $value))."')";
+					break;
+				case 'key_supervision_error':
+					if ($value == "not-null") {
+						$where[] = "server.key_supervision_error IS NOT NULL";
+					}
 					break;
 				}
 			}

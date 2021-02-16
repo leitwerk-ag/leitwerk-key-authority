@@ -1,6 +1,7 @@
 <?php
 ##
 ## Copyright 2013-2017 Opera Software AS
+## Modifications Copyright 2021 Leitwerk AG
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -29,9 +30,13 @@ abstract class Entity extends Record {
 	* Write event details to syslog and to entity_event table.
 	* @param array $details event paramaters to be logged
 	* @param int $level syslog priority as defined in http://php.net/manual/en/function.syslog.php
+	* @param User $actor The user who performs the logged action. In case of null, $this->active_user is assumed.
 	*/
-	public function log($details, $level = LOG_INFO) {
+	public function log($details, $level = LOG_INFO, User $actor = null) {
 		if(is_null($this->id)) throw new BadMethodCallException('Entity must be in directory before log entries can be added');
+		if ($actor === null) {
+			$actor = $this->active_user;
+		}
 		switch(get_class($this)) {
 		case 'User':
 			$scope = "user:{$this->uid}";
@@ -47,11 +52,11 @@ abstract class Entity extends Record {
 		}
 		$json = json_encode($details, JSON_UNESCAPED_UNICODE);
 		$stmt = $this->database->prepare("INSERT INTO entity_event SET entity_id = ?, actor_id = ?, date = UTC_TIMESTAMP(), details = ?");
-		$stmt->bind_param('dds', $this->id, $this->active_user->entity_id, $json);
+		$stmt->bind_param('dds', $this->id, $actor->entity_id, $json);
 		$stmt->execute();
 		$stmt->close();
 
-		$text = "KeysScope=\"{$scope}\" KeysRequester=\"{$this->active_user->uid}\"";
+		$text = "KeysScope=\"{$scope}\" KeysRequester=\"{$actor->uid}\"";
 		foreach($details as $key => $value) {
 			$text .= ' Keys'.ucfirst($key).'="'.str_replace('"', '', $value).'"';
 		}
@@ -156,7 +161,7 @@ abstract class Entity extends Record {
 	*/
 	public function delete_public_key(PublicKey $key) {
 		if(is_null($this->entity_id)) throw new BadMethodCallException('Entity must be in directory before public keys can be deleted');
-		$stmt = $this->database->prepare("DELETE FROM public_key WHERE entity_id = ? AND id = ?");
+		$stmt = $this->database->prepare("UPDATE public_key SET deletion_date = NOW() WHERE entity_id = ? AND id = ?");
 		$stmt->bind_param('dd', $this->entity_id, $key->id);
 		$stmt->execute();
 		$stmt->close();
@@ -190,16 +195,26 @@ abstract class Entity extends Record {
 	* @todo this is perhaps an unintuitive place to do this kind of filtering
 	* @param string|null $account_name to filter for in the destination rules for each key
 	* @param string|null $hostname to filter for in the destination rules for each key
+	* @param bool|null $deleted true: only deleted keys, false: only active keys, null: all keys
 	* @return array of PublicKey objects
 	*/
-	public function list_public_keys($account_name = null, $hostname = null) {
+	public function list_public_keys($account_name = null, $hostname = null, $deleted = null) {
 		if(is_null($this->entity_id)) throw new BadMethodCallException('Entity must be in directory before public keys can be listed');
+		if ($deleted === null) {
+			$deleted_condition = "";
+		} else if ($deleted) {
+			$deleted_condition = "AND deletion_date is not null";
+		} else {
+			$deleted_condition = "AND deletion_date is null";
+		}
 		$stmt = $this->database->prepare("
 			SELECT public_key.*, COUNT(public_key_dest_rule.id) AS dest_rule_count
 			FROM public_key
 			LEFT JOIN public_key_dest_rule ON public_key_dest_rule.public_key_id = public_key.id
 			WHERE entity_id = ?
+			$deleted_condition
 			GROUP BY public_key.id
+			ORDER BY (deletion_date is not null), id
 		");
 		$stmt->bind_param('d', $this->entity_id);
 		$stmt->execute();
@@ -235,6 +250,25 @@ abstract class Entity extends Record {
 		}
 		$stmt->close();
 		return $keys;
+	}
+
+	/**
+	 * Count how many public keys of this entity are no longer active (have been deleted)
+	 *
+	 * @return int The number of keys
+	 */
+	public function count_deleted_public_keys() {
+		$stmt = $this->database->prepare("
+			SELECT COUNT(*) as num
+			FROM public_key
+			WHERE entity_id = ?
+			AND deletion_date is not null
+		");
+		$stmt->bind_param('d', $this->entity_id);
+		$stmt->execute();
+		$result = $stmt->get_result();
+		$row = $result->fetch_assoc();
+		return (int)$row['num'];
 	}
 
 	/**

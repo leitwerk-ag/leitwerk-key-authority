@@ -146,7 +146,7 @@ class ServerAccount extends Entity {
 			}
 			$email->add_cc($config['email']['report_address'], $config['email']['report_name']);
 			$email->subject = "A new SSH public key has been added to the account {$this->name}@{$this->server->hostname} by {$this->active_user->uid}";
-			$email->body = "A new SSH public key has been added to the account {$this->name}@{$this->server->hostname} on SSH Key Authority. The key was added by {$this->active_user->name} ({$this->active_user->uid}).\n\nIf this key was added without your knowledge, please contact {$config['email']['admin_address']} immediately.\n\n".$key->summarize_key_information();
+			$email->body = "A new SSH public key has been added to the account {$this->name}@{$this->server->hostname} on Leitwerk Key Authority. The key was added by {$this->active_user->name} ({$this->active_user->uid}).\n\nIf this key was added without your knowledge, please contact {$config['email']['admin_address']} immediately.\n\n".$key->summarize_key_information();
 			$email->send();
 		}
 		$this->log(array('action' => 'Pubkey add', 'value' => $key->fingerprint_md5), LOG_WARNING);

@@ -1,6 +1,7 @@
 <?php
 ##
 ## Copyright 2013-2017 Opera Software AS
+## Modifications Copyright 2021 Leitwerk AG
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -21,12 +22,18 @@
 	<dl class="panel-body">
 		<dt>Key data</dt>
 		<dd><pre><?php out($pubkey->export())?></pre></dd>
+		<dt>Creation Date</dt>
+		<dd><?php out($pubkey->format_creation_date()) ?></dd>
+		<dt>Deletion Date</dt>
+		<dd><?php out($pubkey->format_deletion_date()) ?></dd>
 		<dt>Key size</dt>
 		<dd><?php out($pubkey->keysize)?></dd>
 		<dt>Fingerprint (MD5)</dt>
 		<dd><?php out($pubkey->fingerprint_md5)?></dd>
 		<dt>Fingerprint (SHA256)</dt>
 		<dd><?php out($pubkey->fingerprint_sha256)?></dd>
+		<dt>Status</dt>
+		<dd><?php out($pubkey->deletion_date !== null ? 'Deleted' : 'Active') ?>
 	</dl>
 </div>
 <?php } ?>

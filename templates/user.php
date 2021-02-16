@@ -1,6 +1,7 @@
 <?php
 ##
 ## Copyright 2013-2017 Opera Software AS
+## Modifications Copyright 2021 Leitwerk AG
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -31,8 +32,8 @@
 	<div class="tab-pane fade" id="details">
 		<h2 class="sr-only">Details</h2>
 		<h3><a href="<?php outurl('/users/'.urlencode($this->get('user')->uid).'/pubkeys')?>">Public keys</a></h3>
-		<?php if(count($this->get('user_keys')) == 0) { ?>
-		<p><?php out($this->get('user')->name)?> has no public keys uploaded.</p>
+		<?php if(count($this->get('active_user_keys')) == 0) { ?>
+		<p><?php out($this->get('user')->name)?> has no active public keys.</p>
 		<?php } else { ?>
 		<table class="table">
 			<thead>
@@ -40,12 +41,13 @@
 					<th>Type</th>
 					<th class="fingerprint">Fingerprint</th>
 					<th></th>
+					<th>Creation Date</th>
 					<th>Size</th>
 					<th>Comment</th>
 				</tr>
 			</thead>
 			<tbody>
-				<?php foreach($this->get('user_keys') as $key) { ?>
+				<?php foreach($this->get('active_user_keys') as $key) { ?>
 				<tr>
 					<td><?php out($key->type) ?></td>
 					<td>
@@ -58,12 +60,20 @@
 						<?php if(count($key->list_signatures()) > 0) { ?><a href="<?php outurl('/pubkeys/'.urlencode($key->id).'#sig')?>"><span class="glyphicon glyphicon-pencil" title="Signed key"></span></a><?php } ?>
 						<?php if(count($key->list_destination_rules()) > 0) { ?><a href="<?php outurl('/pubkeys/'.urlencode($key->id).'#dest')?>"><span class="glyphicon glyphicon-pushpin" title="Destination-restricted"></span></a><?php } ?>
 					</td>
+					<td><?php out($key->format_creation_date()) ?></td>
 					<td><?php out($key->keysize) ?></td>
 					<td><?php out($key->comment) ?></td>
 				</tr>
 				<?php } ?>
 			</tbody>
 		</table>
+		<?php } ?>
+		<?php
+			$num_deleted = $this->get('user')->count_deleted_public_keys();
+			if ($num_deleted > 0) {
+				$keys_plural = $num_deleted == 1 ? 'key' : 'keys';
+		?>
+		<p><a href="<?php outurl('/users/'.urlencode($this->get('user')->uid).'/pubkeys')?>">Show all public keys</a> (Including <?php out($this->get('user')->count_deleted_public_keys()) ?> deleted <?php out($keys_plural) ?>)</p>
 		<?php } ?>
 		<?php if($this->get('admin')) { ?>
 		<h3>Groups</h3>

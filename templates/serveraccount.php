@@ -1,6 +1,7 @@
 <?php
 ##
 ## Copyright 2013-2017 Opera Software AS
+## Modifications Copyright 2021 Leitwerk AG
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -26,7 +27,7 @@ default: $sync_class = 'warning'; $sync_message = 'Not synced'; break;
 <?php if($this->get('server')->key_management == 'keys') { ?>
 <?php if($this->get('account')->name != 'root' && $this->get('server')->sync_status == 'sync warning') { ?>
 <div class="alert alert-danger">
-	Non-root accounts are not being synchronized on this server yet.  See <a href="<?php outurl('/help#sync_setup')?>">the help pages</a> for details of what is required to activate syncing for all accounts.</p>
+	<p>Non-root accounts are not being synchronized on this server yet.  See <a href="<?php outurl('/help#sync_setup')?>">the help pages</a> for details of what is required to activate syncing for all accounts.</p>
 </div>
 <?php } else { ?>
 <dl class="oneline">
@@ -202,7 +203,7 @@ default: $sync_class = 'warning'; $sync_message = 'Not synced'; break;
 			<div class="row">
 				<div class="form-group col-md-2">
 					<div class="input-group">
-						<span class="input-group-addon"><label for="account"<span class="glyphicon glyphicon-log-in" title="Server account"></span><span class="sr-only">Account name</span></label></span>
+						<span class="input-group-addon"><label for="account"><span class="glyphicon glyphicon-log-in" title="Server account"></span><span class="sr-only">Account name</span></label></span>
 						<input type="text" id="account" name="account" class="form-control" placeholder="Account name" required>
 					</div>
 				</div>
@@ -340,6 +341,7 @@ default: $sync_class = 'warning'; $sync_message = 'Not synced'; break;
 						<th>Type</th>
 						<th class="fingerprint">Fingerprint</th>
 						<th></th>
+						<th>Creation Date</th>
 						<th>Size</th>
 						<th>Comment</th>
 						<th>Actions</th>
@@ -347,7 +349,7 @@ default: $sync_class = 'warning'; $sync_message = 'Not synced'; break;
 				</thead>
 				<tbody>
 					<?php foreach($this->get('pubkeys') as $key) { ?>
-					<tr>
+					<tr<?php if ($key->deletion_date !== null) { out(' class="deleted"', ESC_NONE); } ?>>
 						<td><?php out($key->type) ?></td>
 						<td>
 							<a href="<?php outurl('/pubkeys/'.urlencode($key->id))?>">
@@ -359,9 +361,16 @@ default: $sync_class = 'warning'; $sync_message = 'Not synced'; break;
 							<?php if(count($key->list_signatures()) > 0) { ?><a href="<?php outurl('/pubkeys/'.urlencode($key->id).'#sig')?>"><span class="glyphicon glyphicon-pencil" title="Signed key"></span></a><?php } ?>
 							<?php if(count($key->list_destination_rules()) > 0) { ?><a href="<?php outurl('/pubkeys/'.urlencode($key->id).'#dest')?>"><span class="glyphicon glyphicon-pushpin" title="Destination-restricted"></span></a><?php } ?>
 						</td>
+						<td><?php out($key->format_creation_date()) ?></td>
 						<td><?php out($key->keysize) ?></td>
 						<td><?php out($key->comment) ?></td>
-						<td><button type="submit" name="delete_public_key" value="<?php out($key->id) ?>" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-trash"></span> Delete public key</button></td>
+						<td>
+							<?php if ($key->deletion_date !== null) { ?>
+								<i class="glyphicon glyphicon-remove"></i> Deleted
+							<?php } else { ?>
+								<button type="submit" name="delete_public_key" value="<?php out($key->id) ?>" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-trash"></span> Delete public key</button>
+							<?php } ?>
+						</td>
 					</tr>
 					<?php } ?>
 				</tbody>
@@ -376,7 +385,7 @@ default: $sync_class = 'warning'; $sync_message = 'Not synced'; break;
 			</div>
 			<?php if($this->get('active_user')->admin) { ?>
 			<div class="checkbox">
-				<label><input type="checkbox" name="force"> Allow weak (< 4096 bits) key</label>
+				<label><input type="checkbox" name="force"> Allow weak (&lt; 4096 bits) key</label>
 			</div>
 			<?php } ?>
 			<div class="form-group"><button class="btn btn-primary btn-lg btn-block">Add public key to account</button></div>

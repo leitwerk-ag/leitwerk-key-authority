@@ -1,6 +1,7 @@
 <?php
 ##
 ## Copyright 2013-2017 Opera Software AS
+## Modifications Copyright 2021 Leitwerk AG
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -64,6 +65,12 @@
 		<?php } ?>
 		<?php } ?>
 	</ul>
+</div>
+<?php } ?>
+<?php if ($this->get('server')->key_supervision_error !== null) { ?>
+<div class="alert alert-danger">
+	<p>Failed to supervise external keys on this server:</p>
+	<pre><?php out($this->get('server')->key_supervision_error) ?></pre>
 </div>
 <?php } ?>
 <?php } ?>
@@ -184,7 +191,7 @@
 				<label for="account_name" class="sr-only">Account name</label>
 				<input type="text" id="account_name" name="account_name" class="form-control" placeholder="Account name" required pattern=".*[^\s].*">
 			</div>
-			<button type="submit" name="add_account" value="1" class="btn btn-primary">Manage this account with SSH Key Authority</button>
+			<button type="submit" name="add_account" value="1" class="btn btn-primary">Manage this account with Leitwerk Key Authority</button>
 		</form>
 	</div>
 	<div class="tab-pane fade" id="admins">
@@ -283,7 +290,7 @@
 					<div class="radio">
 						<label class="text-success">
 							<input type="radio" name="key_management" value="keys"<?php if($this->get('server')->key_management == 'keys') out(' checked') ?>>
-							SSH keys managed and synced by SSH Key Authority
+							SSH keys managed and synced by Leitwerk Key Authority
 						</label>
 					</div>
 					<div class="radio">
@@ -296,11 +303,13 @@
 						<label>
 							<input type="radio" name="key_management" value="other"<?php if($this->get('server')->key_management == 'other') out(' checked') ?>>
 							Disabled - SSH keys managed by another system
+						</label>
 					</div>
 					<div class="radio">
 						<label>
 							<input type="radio" name="key_management" value="decommissioned"<?php if($this->get('server')->key_management == 'decommissioned') out(' checked') ?>>
 							Disabled - server has been decommissioned
+						</label>
 					</div>
 				</div>
 			</div>
@@ -363,7 +372,7 @@
 				<dd>
 					<?php
 					switch($this->get('server')->key_management) {
-					case 'keys': out('SSH keys managed and synced by SSH Key Authority'); break;
+					case 'keys': out('SSH keys managed and synced by Leitwerk Key Authority'); break;
 					case 'none': out('Disabled - server has no key management'); break;
 					case 'other': out('Disabled - SSH keys managed by another system'); break;
 					case 'decommissioned': out('Disabled - server has been decommissioned'); break;

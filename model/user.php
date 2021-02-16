@@ -1,6 +1,7 @@
 <?php
 ##
 ## Copyright 2013-2017 Opera Software AS
+## Modifications Copyright 2021 Leitwerk AG
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -31,6 +32,10 @@ class User extends Entity {
 	* LDAP connection object
 	*/
 	private $ldap;
+	/**
+	 * Group guid's, this user is member of (will be set by get_details_from_ldap())
+	 */
+	private $ldap_group_guids;
 
 	public function __construct($id = null, $preload_data = array()) {
 		parent::__construct($id, $preload_data);
@@ -197,7 +202,7 @@ class User extends Entity {
 			$email->add_recipient($this->email, $this->name);
 			$email->add_cc($config['email']['report_address'], $config['email']['report_name']);
 			$email->subject = "A new SSH public key has been added to your account ({$this->uid})";
-			$email->body = "A new SSH public key has been added to your account on SSH Key Authority.\n\nIf you added this key then all is well. If you do not recall adding this key, please contact {$config['email']['admin_address']} immediately.\n\n".$key->summarize_key_information();
+			$email->body = "A new SSH public key has been added to your account on Leitwerk Key Authority.\n\nIf you added this key then all is well. If you do not recall adding this key, please contact {$config['email']['admin_address']} immediately.\n\n".$key->summarize_key_information();
 			$email->send();
 		}
 		$this->log(array('action' => 'Pubkey add', 'value' => $key->fingerprint_md5), LOG_WARNING);
@@ -326,12 +331,46 @@ class User extends Entity {
 			}
 			$this->admin = 0;
 			$group_member = $ldapuser[strtolower($config['ldap']['group_member_value'])];
-			$ldapgroups = $this->ldap->search($config['ldap']['dn_group'], LDAP::escape($config['ldap']['group_member']).'='.LDAP::escape($group_member), array('cn'));
+			// The OID 1.2.840.113556.1.4.1941 queries the ldap server for direct and indirect memberships (groups in groups)
+			$ldapgroups = $this->ldap->search($config['ldap']['dn_group'], LDAP::escape($config['ldap']['group_member']).':1.2.840.113556.1.4.1941:='.LDAP::escape($group_member), array('cn', 'objectguid'));
+			$ldap_group_guids = [];
 			foreach($ldapgroups as $ldapgroup) {
+				$ldap_group_guids[] = $ldapgroup['objectguid'];
 				if($ldapgroup['cn'] == $config['ldap']['admin_group_cn']) $this->admin = 1;
 			}
+			$this->ldap_group_guids = $ldap_group_guids;
 		} else {
 			throw new UserNotFoundException('User does not exist.');
+		}
+	}
+
+	/**
+	 * Get the group ObjectGUIDs, this user is member of. Fetch them via ldap, if not already done.
+	 *
+	 * @return string[] guids of the groups this user is member of
+	 */
+	public function get_ldap_group_guids() {
+		global $config;
+		if ($this->ldap_group_guids === null) {
+			$this->get_details_from_ldap();
+		}
+		return $this->ldap_group_guids;
+	}
+
+	/**
+	 * Adds the user to ldap groups or removes him from ldap groups, based on the current status on the directory server.
+	 */
+	public function update_group_memberships() {
+		global $group_dir;
+		foreach ($group_dir->get_sys_groups() as $sys_group) {
+			$should_be_member = $this->active && in_array(strtolower($sys_group->ldap_guid), $this->get_ldap_group_guids());
+			if ($should_be_member && !$this->member_of($sys_group)) {
+				// Use the keys-sync user as actor, because this is an automatic process
+				$sys_group->add_member($this, User::get_keys_sync_user());
+			}
+			if (!$should_be_member && $this->member_of($sys_group)) {
+				$sys_group->delete_member($this);
+			}
 		}
 	}
 
@@ -364,6 +403,30 @@ class User extends Entity {
 		} else {
 			throw new UserNotFoundException('User does not exist.');
 		}
+	}
+
+	/**
+	 * The keys-sync user is used internally to do regular tasks (ldap update, rollout of keys)
+	 * This function returns an instance of this keys-sync user.
+	 * If the user does not exist yet, it will be created.
+	 *
+	 * @return User An instance of the keys-sync user
+	 */
+	public static function get_keys_sync_user() {
+		global $user_dir;
+		try {
+			$keys_sync = $user_dir->get_user_by_uid('keys-sync');
+		} catch(UserNotFoundException $e) {
+			$keys_sync = new User;
+			$keys_sync->uid = 'keys-sync';
+			$keys_sync->name = 'Synchronization script';
+			$keys_sync->email = '';
+			$keys_sync->active = 1;
+			$keys_sync->admin = 1;
+			$keys_sync->developer = 0;
+			$user_dir->add_user($keys_sync);
+		}
+		return $keys_sync;
 	}
 
 	/**

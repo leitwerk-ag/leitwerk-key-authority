@@ -1,6 +1,7 @@
 <?php
 ##
 ## Copyright 2013-2017 Opera Software AS
+## Modifications Copyright 2021 Leitwerk AG
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -173,11 +174,13 @@ function pubkey_json($pubkey, $include_keydata = true, $include_owner = true) {
 	if($include_keydata) {
 		$json->keydata = $pubkey->export();
 	}
+	$json->creation_date = $pubkey->creation_date;
 	$json->type = $pubkey->type;
 	$json->keysize = $pubkey->keysize;
 	$json->fingerprint = $pubkey->fingerprint_md5;
 	$json->fingerprint_md5 = $pubkey->fingerprint_md5;
 	$json->fingerprint_sha256 = $pubkey->fingerprint_sha256;
+	$json->deletion_date = $pubkey->deletion_date;
 	if($include_owner) {
 		$json->owner = new StdClass;
 		$json->owner->type = get_class($pubkey->owner);

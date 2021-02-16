@@ -1,6 +1,7 @@
 <?php
 ##
 ## Copyright 2013-2017 Opera Software AS
+## Modifications Copyright 2021 Leitwerk AG
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -58,7 +59,7 @@ if(isset($_POST['reassign_servers']) && is_array($_POST['servers']) && $active_u
 	$content->set('user_admined_servers', $admined_servers);
 	$content->set('user_admined_groups', $admined_groups);
 	$content->set('user_groups', $groups);
-	$content->set('user_keys', $user->list_public_keys());
+	$content->set('active_user_keys', $user->list_public_keys(null, null, false));
 	$content->set('admin', $active_user->admin);
 }
 

@@ -1,6 +1,7 @@
 <?php
 ##
 ## Copyright 2013-2017 Opera Software AS
+## Modifications Copyright 2021 Leitwerk AG
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -98,6 +99,7 @@
 	<?php if($this->get('admin')) { ?>
 	<div class="tab-pane fade" id="add">
 		<h2 class="sr-only">Add group</h2>
+		<h3>Create local group</h3>
 		<form method="post" action="<?php outurl($this->data->relative_request_url)?>" class="form-inline">
 			<?php out($this->get('active_user')->get_csrf_field(), ESC_NONE) ?>
 			<div class="form-group">
@@ -114,6 +116,20 @@
 				</datalist>
 			</div>
 			<button type="submit" name="add_group" value="1" class="btn btn-primary">Create group</button>
+		</form>
+		<h3>Connect ldap group</h3>
+		<form method="post" action="<?php outurl($this->data->relative_request_url)?>" class="form-inline">
+			<?php out($this->get('active_user')->get_csrf_field(), ESC_NONE) ?>
+			<div class="form-group">
+				<label for="name" class="sr-only">Group name</label>
+				<select id="ldap_group" name="ldap_group" class="form-control" required>
+					<option value="">-- Please choose a group --</option>
+					<?php foreach($this->get('all_ldap_groups') as $ldap_group) { ?>
+					<option value="<?php out($ldap_group['objectguid']) ?>"><?php out($ldap_group['samaccountname']) ?></option>
+					<?php } ?>
+				</select>
+			</div>
+			<button type="submit" name="add_ldap_group" value="1" class="btn btn-primary">Connect group</button>
 		</form>
 	</div>
 	<?php } ?>

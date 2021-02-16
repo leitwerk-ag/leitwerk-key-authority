@@ -1,6 +1,7 @@
 <?php
 ##
 ## Copyright 2013-2017 Opera Software AS
+## Modifications Copyright 2021 Leitwerk AG
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -46,6 +47,45 @@ class LDAP {
 		}
 	}
 
+	/**
+	 * Decode a raw binary 16-byte guid (as given by ldap) to a readable
+	 * guid string like 0d187752-3d90-4c9c-8db2-eb7003163a82
+	 *
+	 * @param string $encoded
+	 * @return string
+	 */
+	private static function decode_guid(string $encoded) {
+		return bin2hex(strrev(substr($encoded, 0, 4))) . '-' .
+				bin2hex(strrev(substr($encoded, 4, 2))) . '-' .
+				bin2hex(strrev(substr($encoded, 6, 2))) . '-' .
+				bin2hex(substr($encoded, 8, 2)) . '-' .
+				bin2hex(substr($encoded, 10, 6));
+	}
+
+	/**
+	 * Example:
+	 * Input: 0d187752-3d90-4c9c-8db2-eb7003163a82
+	 * Output: \52\77\18\0d\90\3d\9c\4c\8d\b2\eb\70\03\16\3a\82
+	 * This can be used for a search query, for example: ObjectGUID=\52\77...
+	 *
+	 * @param string $guid The input guid
+	 * @return string The escaped guid usable for search queries
+	 */
+	public static function query_encode_guid($guid) {
+		if (preg_match('/^([a-f0-9]{8})-([a-f0-9]{4})-([a-f0-9]{4})-([a-f0-9]{4})-([a-f0-9]{12})$/', $guid, $matches)) {
+			$reverse_part = $matches[3] . $matches[2] . $matches[1];
+			$forward_part = $matches[4] . $matches[5];
+			$output_left = '';
+			$output_right = '';
+			for ($i=0; $i<8; $i++) {
+				$output_left .= '\\' . substr($reverse_part, 14 - 2 * $i, 2);
+				$output_right .= '\\' . substr($forward_part, 2 * $i, 2);
+			}
+			return $output_left . $output_right;
+		}
+		return '';
+	}
+
 	public function search($basedn, $filter, $fields = array(), $sort = array()) {
 		if(is_null($this->conn)) $this->connect();
 		if(empty($fields)) $r = @ldap_search($this->conn, $basedn, $filter);
@@ -67,6 +107,9 @@ class LDAP {
 						if(is_array($values)) {
 							unset($values['count']);
 							if(count($values) == 1) $values = $values[0];
+						}
+						if (strtolower($key) === 'objectguid') {
+							$values = self::decode_guid($values);
 						}
 						$itemResult[$key] = $values;
 					}

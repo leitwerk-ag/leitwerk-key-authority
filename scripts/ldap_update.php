@@ -2,6 +2,7 @@
 <?php
 ##
 ## Copyright 2013-2017 Opera Software AS
+## Modifications Copyright 2021 Leitwerk AG
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -21,19 +22,8 @@ require('../core.php');
 
 $users = $user_dir->list_users();
 
-// Use 'keys-sync' user as the active user (create if it does not yet exist)
-try {
-	$active_user = $user_dir->get_user_by_uid('keys-sync');
-} catch(UserNotFoundException $e) {
-	$active_user = new User;
-	$active_user->uid = 'keys-sync';
-	$active_user->name = 'Synchronization script';
-	$active_user->email = '';
-	$active_user->active = 1;
-	$active_user->admin = 1;
-	$active_user->developer = 0;
-	$user_dir->add_user($active_user);
-}
+// Use 'keys-sync' user as the active user
+$active_user = User::get_keys_sync_user();
 
 try {
 	$sysgrp = $group_dir->get_group_by_name($config['ldap']['admin_group_cn']);
@@ -43,6 +33,17 @@ try {
 	$sysgrp->system = 1;
 	$group_dir->add_group($sysgrp);
 }
+// Add guid of main admin group, if not already stored
+if ($sysgrp->ldap_guid === null) {
+	$sysgrp_ldap = $ldap->search($config['ldap']['dn_group'],
+			LDAP::escape($config['ldap']['user_id']).'='.LDAP::escape($sysgrp->name),
+			['objectguid']);
+	if (!empty($sysgrp_ldap)) {
+		$sysgrp->ldap_guid = $sysgrp_ldap[0]['objectguid'];
+		$sysgrp->update();
+	}
+}
+
 foreach($users as $user) {
 	if($user->auth_realm == 'LDAP') {
 		$active = $user->active;
@@ -55,6 +56,8 @@ foreach($users as $user) {
 		} catch(UserNotFoundException $e) {
 			$user->active = 0;
 		}
+		$user->update_group_memberships();
+		$user->update();
 		if($active && !$user->active) {
 			// Check for servers that will now be admin-less
 			$servers = $user->list_admined_servers();
@@ -76,7 +79,7 @@ foreach($users as $user) {
 					$email->body = "{$user->name} ({$user->uid}) was an administrator for {$server->hostname}, but they have now been marked as a former employee and there are no active administrators remaining for this server.\n\n";
 					$email->body .= "Please find a replacement owner for this server and inform {$config['email']['admin_address']} ASAP, otherwise the server will be registered for decommissioning.";
 					$email->add_reply_to($config['email']['admin_address'], $config['email']['admin_name']);
-					if(is_null($rcpt)) {
+					if(!isset($rcpt)) {
 						$email->subject .= " - NO SUPERIOR EMPLOYEE FOUND";
 						$email->body .= "\n\nWARNING: No suitable superior employee could be found!";
 						$email->add_recipient($config['email']['report_address'], $config['email']['report_name']);
@@ -88,12 +91,5 @@ foreach($users as $user) {
 				}
 			}
 		}
-		if($user->admin && $user->active && !$user->member_of($sysgrp)) {
-			$sysgrp->add_member($user);
-		}
-		if(!($user->admin && $user->active) && $user->member_of($sysgrp)) {
-			$sysgrp->delete_member($user);
-		}
-		$user->update();
 	}
 }

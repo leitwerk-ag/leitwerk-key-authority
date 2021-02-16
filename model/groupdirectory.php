@@ -1,6 +1,7 @@
 <?php
 ##
 ## Copyright 2013-2017 Opera Software AS
+## Modifications Copyright 2021 Leitwerk AG
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -27,13 +28,14 @@ class GroupDirectory extends DBDirectory {
 	public function add_group(Group $group) {
 		$name = $group->name;
 		$system = $group->system;
+		$ldap_guid = $group->ldap_guid;
 		$this->database->begin_transaction();
 		$stmt = $this->database->prepare("INSERT INTO entity SET type = 'group'");
 		$stmt->execute();
 		$group->entity_id = $stmt->insert_id;
 		$stmt->close();
-		$stmt = $this->database->prepare("INSERT INTO `group` SET entity_id = ?, name = ?, system = ?");
-		$stmt->bind_param('dsd', $group->entity_id, $name, $system);
+		$stmt = $this->database->prepare("INSERT INTO `group` SET entity_id = ?, name = ?, system = ?, ldap_guid = ?");
+		$stmt->bind_param('dsds', $group->entity_id, $name, $system, $ldap_guid);
 		try {
 			$stmt->execute();
 			$stmt->close();
@@ -109,6 +111,9 @@ class GroupDirectory extends DBDirectory {
 					break;
 				case 'active':
 					$where[] = "`group`.active IN (".implode(", ", array_map('intval', $value)).")";
+					break;
+				case 'system':
+					$where[] = "`group`.system = ".intval($value);
 					break;
 				case 'admin':
 					$where[] = "admin_filter.admin = ".intval($value);
@@ -195,6 +200,19 @@ class GroupDirectory extends DBDirectory {
 		}
 		$stmt->close();
 		return $groups;
+	}
+
+	/**
+	 * Get a list of the groups that are managed by ldap. (visible as system=1 in the database)
+	 * The result of this function is cached for better performance.
+	 * @return Group[] The list of ldap groups
+	 */
+	public function get_sys_groups() {
+		static $sys_groups = null;
+		if ($sys_groups === null) {
+			$sys_groups = $this->list_groups([], ['system' => 1]);
+		}
+		return $sys_groups;
 	}
 }
 

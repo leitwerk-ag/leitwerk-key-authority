@@ -1,6 +1,7 @@
 /*
 ##
 ## Copyright 2013-2017 Opera Software AS
+## Modifications Copyright 2021 Leitwerk AG
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -21,6 +22,17 @@ body {
 	/* The html and body elements cannot have any padding or margin. */
 }
 
+div.navbar {
+	background-color: #fff;
+	border-width: 0;
+	box-shadow: 0 0 20px #ccc;
+}
+.navbar-brand img {
+	transform: scale(2.0);
+}
+.navbar-nav li a {
+	text-transform: uppercase;
+}
 /* Wrapper for page content to push down footer */
 #wrap {
 	min-height: 100%;
@@ -141,6 +153,13 @@ pre.ascii-art {
 	word-wrap: break-word;
 	white-space: pre-wrap;
 }
+code {
+	color: #003c68;
+	background-color: #e0f1ff;
+}
+.alert code {
+	background-color: #fff;
+}
 span.date {
 	white-space: nowrap;
 }
@@ -183,8 +202,15 @@ div.navbar-default {
 	background-color: #f7e7e7;
 }
 a {
-	color: #af3578;
+	color: #003c68;
+	font-weight: bold;
 }
 a:focus, a:hover {
-	color: #611d42;
+	color: #e30613;
+}
+.deleted {
+	opacity: 0.5;
+}
+.deleted .glyphicon-remove {
+	color: #c00;
 }

@@ -1,6 +1,7 @@
 <?php
 ##
 ## Copyright 2013-2017 Opera Software AS
+## Modifications Copyright 2021 Leitwerk AG
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -29,8 +30,8 @@ class SyncRequestDirectory extends DBDirectory {
 	* @param SyncRequest $req object to add
 	*/
 	public function add_sync_request(SyncRequest $req) {
-		$stmt = $this->database->prepare("INSERT IGNORE INTO sync_request SET server_id = ?, account_name = ?");
-		$stmt->bind_param('ds', $req->server_id, $req->account_name);
+		$stmt = $this->database->prepare("INSERT IGNORE INTO sync_request SET server_id = ?, account_name = ?, execution_time = ?");
+		$stmt->bind_param('dss', $req->server_id, $req->account_name, $req->execution_time);
 		$stmt->execute();
 		$req->id = $stmt->insert_id;
 		$stmt->close();
@@ -53,8 +54,15 @@ class SyncRequestDirectory extends DBDirectory {
 	*/
 	public function list_pending_sync_requests() {
 		if(!isset($this->sync_list_stmt)) {
-			$this->sync_list_stmt = $this->database->prepare("SELECT * FROM sync_request WHERE processing = 0 ORDER BY id");
+			$this->sync_list_stmt = $this->database->prepare(
+				"SELECT * FROM sync_request
+				WHERE processing = 0
+				AND (execution_time IS NULL OR execution_time <= ?)
+				ORDER BY id"
+			);
 		}
+		$curdate = date("Y-m-d H:i:s");
+		$this->sync_list_stmt->bind_param("s", $curdate);
 		$this->sync_list_stmt->execute();
 		$result = $this->sync_list_stmt->get_result();
 		$reqs = array();

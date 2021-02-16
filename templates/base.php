@@ -1,6 +1,7 @@
 <?php
 ##
 ## Copyright 2013-2017 Opera Software AS
+## Modifications Copyright 2021 Leitwerk AG
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -17,6 +18,7 @@
 $web_config = $this->get('web_config');
 header('X-Frame-Options: DENY');
 header("Content-Security-Policy: default-src 'self'");
+$footer=str_replace("%v", "0.1", $web_config['footer']);
 ?>
 <!DOCTYPE html>
 <meta charset="utf-8"/>
@@ -29,7 +31,7 @@ header("Content-Security-Policy: default-src 'self'");
 <?php out($this->get('head'), ESC_NONE) ?>
 <div id="wrap">
 <a href="#content" class="sr-only">Skip to main content</a>
-<div class="navbar navbar-default navbar-fixed-top">
+<div class="navbar navbar-fixed-top">
 	<div class="container">
 		<div class="navbar-header">
 			<button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
@@ -40,7 +42,7 @@ header("Content-Security-Policy: default-src 'self'");
 			<?php if(!empty($web_config['logo'])) { ?>
 			<a class="navbar-brand" href="/">
 				<img src="<?php out($web_config['logo'])?>">
-				SSH Key Authority
+				Leitwerk Key Authority
 			</a>
 			<?php } ?>
 		</div>
@@ -65,7 +67,7 @@ header("Content-Security-Policy: default-src 'self'");
 </div>
 <div id="footer">
 	<div class="container">
-		<p class="text-muted credit"><?php out($web_config['footer'], ESC_NONE)?></p>
+		<p class="text-muted credit"><?php out($footer, ESC_NONE)?></p>
 		<?php if($this->get('active_user') && $this->get('active_user')->developer) { ?>
 		<?php } ?>
 	</div>

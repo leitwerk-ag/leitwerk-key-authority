@@ -1,6 +1,7 @@
 <?php
 ##
 ## Copyright 2013-2017 Opera Software AS
+## Modifications Copyright 2021 Leitwerk AG
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -16,7 +17,7 @@
 ##
 ?>
 <h1>Keys management</h1>
-<p>Welcome to the SSH Key Authority server.</p>
+<p>Welcome to the Leitwerk Key Authority server.</p>
 <?php if(count($this->get('user_keys')) == 0) { ?>
 <h2>Getting started</h2>
 <p>To start using the key management system, you must first generate a "key pair".  The instructions for doing this vary based on your computer's Operating System (OS).</p>
@@ -39,6 +40,8 @@
 				<th>Type</th>
 				<th class="fingerprint">Fingerprint</th>
 				<th></th>
+				<th>Creation Date</th>
+				<th>Deletion Date</th>
 				<th>Size</th>
 				<th>Comment</th>
 				<th>Actions</th>
@@ -46,7 +49,7 @@
 		</thead>
 		<tbody>
 			<?php foreach($this->get('user_keys') as $key) { ?>
-			<tr>
+			<tr<?php if ($key->deletion_date !== null) { out(' class="deleted"', ESC_NONE); } ?>>
 				<td><?php out($key->type) ?></td>
 				<td>
 					<a href="<?php outurl('/users/'.urlencode($this->get('uid')).'/pubkeys/'.urlencode($key->id).'#info')?>">
@@ -58,11 +61,17 @@
 					<?php if(count($key->list_signatures()) > 0) { ?><a href="<?php outurl('/users/'.urlencode($this->get('uid')).'/pubkeys/'.urlencode($key->id).'#sig')?>"><span class="glyphicon glyphicon-pencil" title="Signed key"></span></a><?php } ?>
 					<?php if(count($key->list_destination_rules()) > 0) { ?><a href="<?php outurl('/users/'.urlencode($this->get('uid')).'/pubkeys/'.urlencode($key->id).'#dest')?>"><span class="glyphicon glyphicon-pushpin" title="Destination-restricted"></span></a><?php } ?>
 				</td>
+				<td><?php out($key->format_creation_date()) ?></td>
+				<td><?php out($key->format_deletion_date()) ?></td>
 				<td><?php out($key->keysize) ?></td>
 				<td><?php out($key->comment) ?></td>
 				<td>
-					<a href="<?php outurl('/users/'.urlencode($this->get('uid')).'/pubkeys/'.urlencode($key->id))?>" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-cog"></span> Manage public key</a>
-					<button type="submit" name="delete_public_key" value="<?php out($key->id) ?>" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-trash"></span> Delete public key</button>
+					<?php if ($key->deletion_date !== null) { ?>
+						<i class="glyphicon glyphicon-remove"></i> Deleted
+					<?php } else { ?>
+						<a href="<?php outurl('/users/'.urlencode($this->get('uid')).'/pubkeys/'.urlencode($key->id))?>" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-cog"></span> Manage public key</a>
+						<button type="submit" name="delete_public_key" value="<?php out($key->id) ?>" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-trash"></span> Delete public key</button>
+					<?php } ?>
 				</td>
 			</tr>
 			<?php } ?>

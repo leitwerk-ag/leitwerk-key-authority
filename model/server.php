@@ -1,6 +1,7 @@
 <?php
 ##
 ## Copyright 2013-2017 Opera Software AS
+## Modifications Copyright 2021 Leitwerk AG
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -557,12 +558,18 @@ class Server extends Record {
 	}
 
 	/**
-	* List all pending sync requests for this server.
+	* List all current pending sync requests for this server. (No scheduled requests in future)
 	* @return array of SyncRequest objects
 	*/
 	public function list_sync_requests() {
-		$stmt = $this->database->prepare("SELECT * FROM sync_request WHERE server_id = ? ORDER BY account_name");
-		$stmt->bind_param('d', $this->id);
+		$stmt = $this->database->prepare(
+			"SELECT * FROM sync_request
+			WHERE server_id = ?
+			AND (execution_time IS NULL OR execution_time <= ?)
+			ORDER BY account_name"
+				);
+		$curdate = date("Y-m-d H:i:s");
+		$stmt->bind_param('ds', $this->id, $curdate);
 		$stmt->execute();
 		$result = $stmt->get_result();
 		$reqs = array();
@@ -579,6 +586,96 @@ class Server extends Record {
 		$stmt = $this->database->prepare("DELETE FROM sync_request WHERE server_id = ?");
 		$stmt->bind_param('d', $this->id);
 		$stmt->execute();
+	}
+
+	/**
+	 * Delete sync requests for this server and schedule a new request in 30 minutes
+	 */
+	public function reschedule_sync_request() {
+		global $sync_request_dir;
+
+		$this->delete_all_sync_requests();
+		$req = new SyncRequest();
+		$req->server_id = $this->id;
+		$req->execution_time = date("Y-m-d H:i:s", time() + 30 * 60);
+		$sync_request_dir->add_sync_request($req);
+	}
+
+	/**
+	 * Places status information in the file given by $config['monitoring']['status_file_path'] on this server.
+	 * The current sync status and the result of external key supervision are included in this file.
+	 *
+	 * @param handle $sftp The sftp connection to this server
+	 */
+	public function update_status_file($sftp) {
+		global $config;
+		$timeout = (int)($config['monitoring']['status_file_timeout'] ?? 7200);
+		$expire = date('r', time() + $timeout);
+		$lastlogmsg = $this->get_last_sync_event();
+		if ($lastlogmsg !== null) {
+			$sync_status_message = json_decode($lastlogmsg->details)->value;
+		} else {
+			$sync_status_message = null;
+		}
+		$unnoticed_keys = $this->get_unnoticed_external_keys();
+		$accounts_with_unnoticed_keys = [];
+		foreach ($unnoticed_keys as $key) {
+			$account = $key->account_name;
+			if (!in_array($account, $accounts_with_unnoticed_keys)) {
+				$accounts_with_unnoticed_keys[] = $account;
+			}
+		}
+		$status_content = [
+			"warn_below_version" => 1,
+			"error_below_version" => 1,
+			"sync_status" => $this->sync_status,
+			"sync_status_message" => $sync_status_message,
+			"key_supervision_error" => $this->key_supervision_error,
+			"accounts_with_unnoticed_keys" => $accounts_with_unnoticed_keys,
+			"expire" => $expire,
+		];
+
+		$file_content = json_encode($status_content);
+		$filename = $config['monitoring']['status_file_path'] ?? '/var/local/keys-sync.status';
+		try {
+			file_put_contents("ssh2.sftp://{$sftp}{$filename}", $file_content);
+		} catch (Exception $e) {
+			$this->key_supervision_error .= "Could not save status info in {$filename}: {$e->getMessage()}\n";
+			$this->update();
+		}
+	}
+
+	/**
+	 * Search for external keys that fulfill all of the following criteria:
+	 * - Appeared on this server at least 96 hours ago
+	 * - Are still on the server (have been seen at last scan)
+	 * - Are in status 'new' (It has not been decided yet if key is 'allowed' or 'denied')
+	 *
+	 * @return ExternalKeyOccurrence[] The key occurrences that fulfill the criteria
+	 */
+	public function get_unnoticed_external_keys() {
+		$stmt = $this->database->prepare("
+			SELECT external_key_occurrence.* FROM external_key_occurrence
+			LEFT JOIN external_key on external_key_occurrence.key = external_key.id
+			WHERE external_key_occurrence.server = ?
+			AND external_key_occurrence.appeared <= date_sub(now(), interval 96 hour)
+			AND external_key.status = 'new'
+		");
+		$stmt->bind_param("i", $this->id);
+		$stmt->execute();
+		$result = $stmt->get_result();
+		$unnoticed = [];
+		while ($row = $result->fetch_assoc()) {
+			$attributes = [
+				'key' => $row['key'],
+				'server' => $row['server'],
+				'account_name' => $row['account_name'],
+				'comment' => $row['comment'],
+				'appeared' => $row['appeared'],
+			];
+			$unnoticed[] = new ExternalKeyOccurrence($row['id'], $attributes);
+		}
+		return $unnoticed;
 	}
 }
 
