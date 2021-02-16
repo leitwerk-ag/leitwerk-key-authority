@@ -1,6 +1,6 @@
 [Unit]
 Description=SSH Key synchronization daemon
-Documentation=https://github.com/operasoftware/ssh-key-authority
+Documentation=https://github.com/leitwerk-ag/ssh-key-authority
 Requires=mysql.service
 After=mysql.service
 
