@@ -18,6 +18,7 @@
 
 chdir(__DIR__);
 require('../core.php');
+require('ssh.php');
 $active_user = User::get_keys_sync_user();
 
 $keys_in_db = ExternalKey::list_external_keys();
@@ -33,31 +34,34 @@ $keys = [];
 foreach ($servers as $server) {
 	$error_string = "";
 	$start_time = date('c');
-	$ssh = null;
-	$sftp = null;
 	try {
-		$keys[$server->id] = read_server_keys($server, $error_string, $ssh, $sftp, $keys_in_db_assoc);
+		echo date('c')." Reading external ssh keys from {$server->hostname}\n";
+
+		$ssh = $server->connect_ssh();
+		$keys[$server->id] = read_server_keys($server, $error_string, $ssh, $keys_in_db_assoc);
+		if ($error_string == "") {
+			// Empty error set is stored as null in database
+			$error_string = null;
+		} else {
+			// Prepend start time to non-empty error sets
+			$error_string = $start_time . "\n" . $error_string;
+		}
 	} catch (Exception $e) {
 		$error_string .= "Exception while reading keys of {$server->hostname}:\n  " . $e->getMessage() . "\n";
-	}
-	if ($error_string == "") {
-		// Empty error set is stored as null in database
-		$error_string = null;
-	} else {
-		// Prepend start time to non-empty error sets
-		$error_string = $start_time . "\n" . $error_string;
 	}
 	if ($error_string !== $server->key_supervision_error) {
 		$server->key_supervision_error = $error_string;
 		$server->update();
 	}
-	if ($sftp !== null) {
-		// Avoid false-negative message after a downtime
-		// If sync is on error state but key supervision succeeds, this may be because the
-		// target server recently recovered from downtime.
-		// In this case, no false-negative status file will be placed.
-		if ($server->key_supervision_error !== null || $server->sync_status === 'sync success') {
-			$server->update_status_file($sftp);
+	// Avoid false-negative message after a downtime
+	// If sync is on error state but key supervision succeeds, this may be because the
+	// target server recently recovered from downtime.
+	// In this case, no false-negative status file will be placed.
+	if ($server->key_supervision_error !== null || $server->sync_status === 'sync success') {
+		try {
+			$server->update_status_file($ssh);
+		} catch (SSHException $e) {
+			// ignore
 		}
 	}
 }
@@ -150,54 +154,17 @@ function parse_user_entry(string $line) {
  *
  * @param Server $server The server to read keys from
  * @param string &$error_string Reference to a string variable where error messages are appended
- * @param &$sftp Reference to a variable, where the sftp handle is stored by this function, if it could be opened successfully.
+ * @param SSH $connection SSH connection instance to the server
  * @param array $keys_in_db_assoc Known keys, used to check if some keys need to be removed
  * @return array of ssh keys that are active on this server
  */
-function read_server_keys(Server $server, string &$error_string, &$connection, &$sftp, $keys_in_db_assoc) {
+function read_server_keys(Server $server, string &$error_string, SSH $connection, $keys_in_db_assoc) {
 	global $server_dir;
 
-	echo date('c')." Reading external ssh keys from {$server->hostname}\n";
-	$attempts = ['keys-sync', 'root'];
-	foreach($attempts as $attempt) {
-		try {
-			$connection = ssh2_connect($server->hostname, $server->port);
-		} catch(ErrorException $e) {
-			throw new Exception("Failed to connect.");
-		}
-		$fingerprint = ssh2_fingerprint($connection, SSH2_FINGERPRINT_MD5 | SSH2_FINGERPRINT_HEX);
-		if(is_null($server->rsa_key_fingerprint)) {
-			$server->rsa_key_fingerprint = $fingerprint;
-			$server->update();
-		} else {
-			if(strcmp($server->rsa_key_fingerprint, $fingerprint) !== 0) {
-				throw new Exception("RSA key validation failed.");
-			}
-		}
-		if(!isset($config['security']) || !isset($config['security']['host_key_collision_protection']) || $config['security']['host_key_collision_protection'] == 1) {
-			$matching_servers = $server_dir->list_servers(array(), array('rsa_key_fingerprint' => $server->rsa_key_fingerprint, 'key_management' => array('keys')));
-			if(count($matching_servers) > 1) {
-				throw new Exception("There are multiple hosts with same host key.");
-			}
-		}
-		try {
-			ssh2_auth_pubkey_file($connection, $attempt, 'config/keys-sync.pub', 'config/keys-sync');
-			break;
-		} catch(ErrorException $e) {
-			if($attempt == 'root') {
-				throw new Exception("Public key authentication failed.");
-			}
-		}
-	}
-	try {
-		$sftp = ssh2_sftp($connection);
-	} catch(ErrorException $e) {
-		throw new Exception("SFTP subsystem setup failed.");
-	}
-	if (!external_keys_active($sftp)) {
+	if (!external_keys_active($connection)) {
 		return [];
 	}
-	$user_entries = file("ssh2.sftp://$sftp/etc/passwd");
+	$user_entries = $connection->file_get_lines("/etc/passwd");
 	$user_entries = array_map('parse_user_entry', $user_entries);
 	$user_entries = array_filter($user_entries, function($entry) {
 		return $entry['active'];
@@ -207,9 +174,9 @@ function read_server_keys(Server $server, string &$error_string, &$connection, &
 	try {
 		foreach ($user_entries as $user) {
 			$path = "{$user['home']}/.ssh/authorized_keys";
-			add_entries($keys, $user['user'], $connection, "ssh2.sftp://{$sftp}", $path, $error_string, $keys_in_db_assoc);
+			add_entries($keys, $user['user'], $connection, $path, $error_string, $keys_in_db_assoc);
 			$path .= '2';
-			add_entries($keys, $user['user'], $connection, "ssh2.sftp://{$sftp}", $path, $error_string, $keys_in_db_assoc);
+			add_entries($keys, $user['user'], $connection, $path, $error_string, $keys_in_db_assoc);
 		}
 	} catch (Exception $e) {
 		throw new Exception("Could not parse external keys in $path:\n  " . $e->getMessage());
@@ -222,11 +189,11 @@ function read_server_keys(Server $server, string &$error_string, &$connection, &
  * Check if external keys (~/.ssh/authorized_keys) are activated in the sshd-config
  * of a target server.
  *
- * @param handle $sftp An sftp handle connected to the server to check
+ * @param SSH $connection SSH connection instance to the server
  * @return bool true if they are active (users can login using keys in authorized_keys), false if they are ignored
  */
-function external_keys_active($sftp) {
-	$config_lines = file("ssh2.sftp://$sftp/etc/ssh/sshd_config");
+function external_keys_active($connection) {
+	$config_lines = $connection->file_get_lines("/etc/ssh/sshd_config");
 	foreach ($config_lines as $line) {
 		if (strpos(strtolower($line), "authorizedkeysfile") === 0) {
 			return strpos($line, ".ssh/authorized_keys") !== false;
@@ -242,31 +209,25 @@ function external_keys_active($sftp) {
  *
  * @param array $entries Reference to the array of entries to fill
  * @param string $user Username to add to the entries
- * @param resource $ssh The ssh connection resource to the target server
- * @param string $sftp_url Resource-URL for the sftp connection to the server
+ * @param SSH $ssh The ssh connection instance to the target server
  * @param string $filename Name of the authorized_keys file to scan (If it does not exist, it is ignored)
  * @param string &$error_string Reference to a string variable where error messages are appended
  * @param array $keys_in_db_assoc Known keys, used to check if some keys need to be removed
  */
-function add_entries(array &$entries, string $user, $ssh, string $sftp_url, string $filename, string &$error_string, $keys_in_db_assoc) {
-	if (!file_exists($sftp_url . $filename)) {
+function add_entries(array &$entries, string $user, SSH $ssh, string $filename, string &$error_string, $keys_in_db_assoc) {
+	try {
+		$lines = $ssh->file_get_lines($filename);
+	} catch (SSHException $e) {
 		check_missing_file($ssh, $filename, $error_string);
 		return;
 	}
-	try {
-		$lines = file($sftp_url . $filename);
-		// Use the 'test' shell command to check for writability.
-		// The php function is_writable() produces wrong results when using facl.
-		$shell_escaped_filename = escapeshellarg($filename);
-		$stream = ssh2_exec($ssh, "test -w {$shell_escaped_filename}; echo $?");
-		stream_set_blocking($stream, true);
-		$output = stream_get_contents($stream);
-		if ($output !== "0\n") {
-			$error_string .= "The file {$filename} is not writable for the keys-sync user. This will prevent key authority from removing old keys.\n";
-		}
-	} catch (ErrorException $e) {
-		$error_string .= "Failed to read $filename\n  {$e->getMessage()}\n";
-		return;
+	// Use the 'test' shell command to check for writability.
+	// The php function is_writable() produces wrong results when using facl.
+	$shell_escaped_filename = escapeshellarg($filename);
+	$stream = $ssh->exec("test -w {$shell_escaped_filename}; echo $?");
+	$output = stream_get_contents($stream);
+	if ($output !== "0\n") {
+		$error_string .= "The file {$filename} is not writable for the keys-sync user. This will prevent key authority from removing old keys.\n";
 	}
 	$file_modified = false;
 	$new_filecontent = '';
@@ -291,15 +252,17 @@ function add_entries(array &$entries, string $user, $ssh, string $sftp_url, stri
 			}
 		}
 		if ($keep_line) {
-			$new_filecontent .= $line;
+			$new_filecontent .= "$line\n";
 			$line_num++;
 		} else {
 			$file_modified = true;
 		}
 	}
 	if ($file_modified) {
-		if (file_put_contents($sftp_url . $filename, $new_filecontent) === false) {
-			$error_string .= "Removing 'denied' keys from $filename failed: file_put_contents() returned false.\n";
+		try {
+		    $ssh->file_put_contents($filename, $new_filecontent);
+		} catch (SSHException $e) {
+			$error_string .= "Removing 'denied' keys from $filename failed: {$e->getMessage()}\n";
 		}
 	}
 }
@@ -308,25 +271,27 @@ function add_entries(array &$entries, string $user, $ssh, string $sftp_url, stri
  * Check if the specified file is actually non-existent (in which case nothing happens)
  * If the file is instead not accessible because of permissions, an error message will be appended to $error_string
  *
- * @param resource $ssh The ssh connection resource to the target server
+ * @param SSH $ssh The ssh connection instance to the target server
  * @param string $filename Name of the authorized_keys file to scan
  * @param string &$error_string Reference to a string variable where error messages are appended
  */
-function check_missing_file($ssh, string $filename, string &$error_string) {
-	$escaped_filename = escapeshellarg($filename);
-	$stream = ssh2_exec($ssh, "LANG=en_US.UTF-8 head -c 0 $escaped_filename");
-	$stderr = ssh2_fetch_stream($stream, SSH2_STREAM_STDERR);
-	stream_set_blocking($stderr, true);
-	$stderr_output = stream_get_contents($stderr);
-	if (preg_match("%: ([^:]+)\n\$%", $stderr_output, $matches)) {
-		$err = $matches[1];
-		if ($err !== "No such file or directory") {
-			$error_string .= "Could not read $filename: $err\n";
+function check_missing_file(SSH $ssh, string $filename, string &$error_string) {
+	try {
+		$escaped_filename = escapeshellarg($filename);
+		$stream = $ssh->exec("LANG=en_US.UTF-8 head -c 0 $escaped_filename 2>&1");
+		$stderr_output = stream_get_contents($stream);
+		if (preg_match("%: ([^:]+)\n\$%", $stderr_output, $matches)) {
+			$err = $matches[1];
+			if ($err !== "No such file or directory") {
+				$error_string .= "Could not read $filename: $err\n";
+			}
+		} else if ($stderr_output === "") {
+			$error_string .= "Failed to check if $filename exists: Got no error message\n";
+		} else {
+			$error_string .= "Failed to check if $filename exists: $stderr_output";
 		}
-	} else if ($stderr_output === "") {
-		$error_string .= "Failed to check if $filename exists: Got no error message\n";
-	} else {
-		$error_string .= "Failed to check if $filename exists: $stderr_output";
+	} catch (SSHException $e) {
+		throw new SSHException("Could not scan $filename", null, $e);
 	}
 }
 
