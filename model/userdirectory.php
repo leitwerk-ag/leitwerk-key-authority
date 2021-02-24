@@ -96,8 +96,8 @@ class UserDirectory extends DBDirectory {
 		} else {
 			$user = new User;
 			$user->uid = $uid;
-			$this->cache_uid[$uid] = $user;
 			$user->get_details_from_ldap();
+			$this->cache_uid[$uid] = $user;
 			$this->add_user($user);
 			$user->update_group_memberships();
 		}

@@ -1,6 +1,7 @@
 <?php
 ##
 ## Copyright 2013-2017 Opera Software AS
+## Modifications Copyright 2021 Leitwerk AG
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -20,6 +21,7 @@
 <ul class="nav nav-tabs">
 	<li><a href="#list" data-toggle="tab">Server list</a></li>
 	<li><a href="#add" data-toggle="tab">Add server</a></li>
+	<li><a href="#add_bulk" data-toggle="tab">Add multiple servers</a></li>
 </ul>
 <?php } ?>
 
@@ -193,6 +195,32 @@
 				</datalist>
 			</div>
 			<button type="submit" name="add_server" value="1" class="btn btn-primary">Add server to key management</button>
+		</form>
+	</div>
+	<div class="tab-pane fade" id="add_bulk">
+		<h2 class="sr-only">Add multiple servers</h2>
+		<div class="alert alert-info">
+			See <a href="<?php outurl('/help#sync_setup')?>" class="alert-link">the sync setup instructions</a> for how to set up the server for key synchronization.
+		</div>
+		<h3>Format</h3>
+		<p>The csv content must consist of 3 columns and not contain a headline.</p>
+		<p>Columns:</p>
+		<ol>
+			<li>The dns name of the server</li>
+			<li>The port number</li>
+			<li>A semicolon-separated list of admin login names and admin group names. At least one admin or admin group is needed per server.</li>
+		</ol>
+		<h4>Example</h4>
+		<pre>host1.example.com,22,admin1
+host2.example.com,2222,admin1;adm_group4
+host3.example.com,22,adm_group4;admin2</pre>
+		<form method="post" action="<?php outurl($this->data->relative_request_url)?>">
+			<?php out($this->get('active_user')->get_csrf_field(), ESC_NONE) ?>
+			<div class="form-group">
+				<label for="import">CSV import data</label>
+				<textarea id="import" name="import" class="form-control" required></textarea>
+			</div>
+			<button type="submit" name="add_bulk" value="1" class="btn btn-primary">Add servers to key management</button>
 		</form>
 	</div>
 	<?php } ?>
