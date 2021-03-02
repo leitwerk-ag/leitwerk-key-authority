@@ -214,3 +214,7 @@ a:focus, a:hover {
 .deleted .glyphicon-remove {
 	color: #c00;
 }
+
+.ldap-treeview li {
+	list-style-type: none;
+}

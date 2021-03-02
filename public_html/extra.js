@@ -1,6 +1,7 @@
 /*
 ##
 ## Copyright 2013-2017 Opera Software AS
+## Modifications Copyright 2021 Leitwerk AG
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -414,5 +415,98 @@ $(function() {
 		if($("#server_admins").val()) {
 			$("#server_admins").removeClass('hidden');
 		}
+	});
+});
+
+// ldap tree view
+function requestOU(guid, callback) {
+	fetch('groups?' + new URLSearchParams({
+		get_ldap_groups: "",
+		guid,
+	}))
+		.then(response => response.json())
+		.then(callback)
+		.catch(() => {
+			callback(null);
+		});
+}
+function registerClickHandler(li, link, icon, guid) {
+	let ul = null;
+	link.addEventListener("click", (event) => {
+		event.preventDefault();
+		if (ul == null) {
+			ul = genUL(guid);
+			li.appendChild(ul);
+			icon.classList.remove("glyphicon-folder-close");
+			icon.classList.add("glyphicon-folder-open");
+		} else {
+			icon.classList.remove("glyphicon-folder-open");
+			icon.classList.add("glyphicon-folder-close");
+			li.removeChild(ul);
+			ul = null;
+		}
+	});
+}
+function addOU(li, ou) {
+	let link = document.createElement("a");
+	link.setAttribute("href", "#");
+	let icon = document.createElement("i");
+	icon.classList.add("glyphicon");
+	icon.classList.add("glyphicon-folder-close");
+	link.appendChild(icon);
+	let text = document.createTextNode(" " + ou.name);
+	link.appendChild(text);
+	li.appendChild(link);
+	registerClickHandler(li, link, icon, ou.guid);
+}
+function addGroup(li, group) {
+	let input = document.createElement("input");
+	input.setAttribute("type", "checkbox");
+	input.setAttribute("name", "groups[]");
+	input.setAttribute("value", group.guid);
+	input.id = group.guid;
+	li.appendChild(input);
+	let text = document.createTextNode(" " + group.name);
+	let label = document.createElement("label");
+	label.appendChild(text);
+	label.setAttribute("for", group.guid);
+	li.appendChild(label);
+}
+function genUL(guid) {
+	let li = document.createElement("li");
+	li.textContent = "Loading ...";
+	let ul = document.createElement("ul");
+	ul.appendChild(li);
+	requestOU(guid, (result) => {
+		if (result == null) {
+			li.textContent = "(Error while loading groups)";
+			return;
+		}
+		ul.removeChild(li);
+		result.forEach((row) => {
+			let rowLi = document.createElement("li");
+			if (row.type == "ou") {
+				addOU(rowLi, row);
+			} else if (row.type == "group") {
+				addGroup(rowLi, row);
+			}
+			ul.appendChild(rowLi);
+		});
+		if (result.length == 0) {
+			let emptyLi = document.createElement("li");
+			emptyLi.textContent = "(empty)";
+			ul.appendChild(emptyLi);
+		}
+	});
+	return ul;
+}
+function createTreeview(elem) {
+	elem.innerHTML = "";
+	elem.appendChild(genUL(null));
+}
+$(function() {
+	let trees = $('div.ldap-treeview');
+	trees.each(function(idx) {
+		createTreeview(trees[idx]);
 	});
 });
