@@ -49,30 +49,116 @@ if(isset($_POST['add_group']) && ($active_user->admin)) {
 		}
 	}
 } else if (isset($_POST['add_ldap_group']) && $active_user->admin) {
-	$group_guid = $_POST['ldap_group'];
-	$result = $ldap->search($config['ldap']['dn_group'], 'objectguid='.LDAP::query_encode_guid($group_guid), ['cn']);
-	$alert = new UserAlert;
-	if (!empty($result)) {
-		try {
-			$group = new Group;
-			$group->name = $result[0]['cn'];
-			$group->system = 1;
-			$group->ldap_guid = $group_guid;
-			$group_dir->add_group($group);
+	if (isset($_POST['groups'])) {
+		$group_guids = $_POST['groups'];
+	} else {
+		$group_guids = [];
+	}
+	$added = [];
+	$already_existing = [];
+	$not_found = 0;
+	foreach ($group_guids as $group_guid) {
+		$result = $ldap->search($config['ldap']['dn_group'], 'objectguid='.LDAP::query_encode_guid($group_guid), ['cn']);
+		if (!empty($result)) {
+			try {
+				$group = new Group;
+				$group->name = $result[0]['cn'];
+				$group->system = 1;
+				$group->ldap_guid = $group_guid;
+				$group_dir->add_group($group);
 
-			$alert->content = 'Group \'<a href="'.rrurl('/groups/'.urlencode($group->name)).'" class="alert-link">'.hesc($group->name).'</a>\' successfully connected.';
-			$alert->escaping = ESC_NONE;
-		} catch (GroupAlreadyExistsException $e) {
-			$alert->content = 'Group \'<a href="'.rrurl('/groups/'.urlencode($group->name)).'" class="alert-link">'.hesc($group->name).'</a>\' already exists.';
-			$alert->escaping = ESC_NONE;
-			$alert->class = 'danger';
+				$added[] = $group->name;
+			} catch (GroupAlreadyExistsException $e) {
+				$already_existing[] = $group->name;
+			}
+		} else {
+			$not_found++;
+		}
+	}
+	if (!empty($added)) {
+		$success_alert = new UserAlert;
+		$html_added = array_map(function ($name) {
+			return '<a href="'.rrurl('/groups/'.urlencode($name)).'" class="alert-link">'.hesc($name).'</a>';
+		}, $added);
+		$list = "<ul><li>" . implode("</li><li>", $html_added) . "</li></ul>";
+		if (count($added) == 1) {
+			$success_alert->content = "The following group has been added:$list";
+		} else {
+			$success_alert->content = "The following groups have been added:$list";
+		}
+		$success_alert->escaping = ESC_NONE;
+		$active_user->add_alert($success_alert);
+	}
+	$error_alert = new UserAlert;
+	$content = "";
+	if (!empty($already_existing)) {
+		$html_existing = array_map(function ($name) {
+			return '<a href="'.rrurl('/groups/'.urlencode($name)).'" class="alert-link">'.hesc($name).'</a>';
+		}, $already_existing);
+		$list = "<ul><li>" . implode("</li><li>", $html_existing) . "</li></ul>";
+		if (count($already_existing) == 1) {
+			$content .= "The following group already exists:$list";
+		} else {
+			$content .= "The following groups already exist:$list";
+		}
+	}
+	if ($not_found > 0) {
+		if ($not_found == 1) {
+			$content .= "1 group could not be found on the ldap server";
+		} else {
+			$content .= "$not_found groups could not be found on the ldap server";
+		}
+	}
+	if (empty($group_guids)) {
+		$content = "No group has been selected";
+	}
+	if ($content != "") {
+		$error_alert->content = $content;
+		$error_alert->class = 'danger';
+		$error_alert->escaping = ESC_NONE;
+		$active_user->add_alert($error_alert);
+	}
+
+	redirect('#add');
+} else if (isset($_GET['get_ldap_groups'])) {
+	$guid = $_GET['guid'];
+	$return_list = [];
+	if ($guid == "null") {
+		// Get the main organization unit that contains all groups
+		$main = $ldap->search($config['ldap']['dn_group'], 'DistinguishedName='.$ldap->escape($config['ldap']['dn_group']), ['name', 'objectclass', 'objectguid']);
+		if (!empty($main) && in_array('organizationalUnit', $main[0]['objectclass'])) {
+			$return_list[] = [
+				"type" => "ou",
+				"name" => $main[0]['name'],
+				"guid" => $main[0]['objectguid'],
+			];
 		}
 	} else {
-		$alert->content = 'Could not find this group on the ldap server';
-		$alert->class = 'danger';
+		$ou = $ldap->search($config['ldap']['dn_group'], 'objectguid='.$ldap->query_encode_guid($guid), ['dn']);
+		if (!empty($ou)) {
+			$elements = $ldap->search($ou[0]['dn'], '(objectClass=*)', ['objectclass', 'name', 'objectguid'], [], true);
+			foreach ($elements as $element) {
+				if (in_array('organizationalUnit', $element['objectclass'])) {
+					$return_list[] = [
+						"type" => "ou",
+						"name" => $element['name'],
+						"guid" => $element['objectguid'],
+					];
+				} else if (in_array('group', $element['objectclass'])) {
+					$return_list[] = [
+						"type" => "group",
+						"name" => $element['name'],
+						"guid" => $element['objectguid'],
+					];
+				}
+			}
+		}
 	}
-	$active_user->add_alert($alert);
-	redirect('#add');
+	$page = new PageSection('groups_list_ldap');
+	$page->set('groups', $return_list);
+	header('Content-type: text/json; charset=utf-8');
+	echo $page->generate();
+	return;
 } else {
 	$defaults = array();
 	$defaults['active'] = array('1');
@@ -92,7 +178,6 @@ if(isset($_POST['add_group']) && ($active_user->admin)) {
 	$content->set('admin', $active_user->admin);
 	$content->set('groups', $groups);
 	$content->set('all_users', $user_dir->list_users());
-	$content->set('all_ldap_groups', $ldap->search($config['ldap']['dn_group'], 'objectclass=group', [$config['ldap']['user_id'], 'objectguid']));
 }
 
 $page = new PageSection('base');
