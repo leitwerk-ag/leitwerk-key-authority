@@ -602,9 +602,8 @@ class Server extends Record {
 				}
 			}
 			if(is_null($allowed_hostnames)) {
-				$stream = $connection->exec('/bin/hostname -f');
-				$allowed_hostnames = array(trim(stream_get_contents($stream)));
-				fclose($stream);
+				$output = $connection->exec('/bin/hostname -f');
+				$allowed_hostnames = array(trim($output));
 			}
 			if(!in_array($hostname, $allowed_hostnames)) {
 				throw new SSHException("Hostname check failed (allowed: ".implode(", ", $allowed_hostnames).").");

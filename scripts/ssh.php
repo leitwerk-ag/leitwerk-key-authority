@@ -86,15 +86,18 @@ class SSH {
 	 *
 	 * @param string $command Shell command to execute
 	 * @throws SSHException If starting the command fails
+	 * @return string The output of the command as one string
 	 */
-	public function exec(string $command) {
+	public function exec(string $command): string {
 		try {
 			$stream = ssh2_exec($this->connection, $command);
 		} catch (ErrorException $e) {
 			throw new SSHException("Failed to execute the command: $command", null, $e);
 		}
 		stream_set_blocking($stream, true);
-		return $stream;
+		$output = stream_get_contents($stream);
+		fclose($stream);
+		return $output;
 	}
 
 	/**

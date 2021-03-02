@@ -224,8 +224,7 @@ function add_entries(array &$entries, string $user, SSH $ssh, string $filename, 
 	// Use the 'test' shell command to check for writability.
 	// The php function is_writable() produces wrong results when using facl.
 	$shell_escaped_filename = escapeshellarg($filename);
-	$stream = $ssh->exec("test -w {$shell_escaped_filename}; echo $?");
-	$output = stream_get_contents($stream);
+	$output = $ssh->exec("test -w {$shell_escaped_filename}; echo $?");
 	if ($output !== "0\n") {
 		$error_string .= "The file {$filename} is not writable for the keys-sync user. This will prevent key authority from removing old keys.\n";
 	}
@@ -278,8 +277,7 @@ function add_entries(array &$entries, string $user, SSH $ssh, string $filename, 
 function check_missing_file(SSH $ssh, string $filename, string &$error_string) {
 	try {
 		$escaped_filename = escapeshellarg($filename);
-		$stream = $ssh->exec("LANG=en_US.UTF-8 head -c 0 $escaped_filename 2>&1");
-		$stderr_output = stream_get_contents($stream);
+		$stderr_output = $ssh->exec("LANG=en_US.UTF-8 head -c 0 $escaped_filename 2>&1");
 		if (preg_match("%: ([^:]+)\n\$%", $stderr_output, $matches)) {
 			$err = $matches[1];
 			if ($err !== "No such file or directory") {

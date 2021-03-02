@@ -269,8 +269,8 @@ function sync_server($id, $only_username = null, $preview = false) {
 	$cleanup_errors = 0;
 
 	// Sync
-	$stream = $connection->exec('/usr/bin/sha1sum '.escapeshellarg($keydir).'/*');
-	$entries = explode("\n", stream_get_contents($stream));
+	$output = $connection->exec('/usr/bin/sha1sum '.escapeshellarg($keydir).'/*');
+	$entries = explode("\n", $output);
 	$sha1sums = array();
 	foreach($entries as $entry) {
 		if(preg_match('|^([0-9a-f]{40})  '.preg_quote($keydir, '|').'/(.*)$|', $entry, $matches)) {
@@ -287,9 +287,7 @@ function sync_server($id, $only_username = null, $preview = false) {
 				$remote_filename = "$keydir/$username";
 				$create = true;
 				if($keyfile['check']) {
-					$stream = $connection->exec('id '.escapeshellarg($username));
-					$output = stream_get_contents($stream);
-					fclose($stream);
+					$output = $connection->exec('id '.escapeshellarg($username));
 					if(empty($output)) $create = false;
 				}
 				if($create) {
