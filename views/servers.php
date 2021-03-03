@@ -44,14 +44,18 @@ function prepare_import(string $csv_document, &$error_ref): ?array {
 		}
 		$hostname = $cells[0];
 		$port_str = $cells[1];
-		if (!preg_match('/^[0-9]+$/', $port_str)) {
-			$errors .= "- Line $line_num contains an invalid port number: $port_str\n";
-			continue;
-		}
-		$port = (int)$port_str;
-		if ($port > 65535) {
-			$errors .= "- Port number in line $line_num is too large: Got $port, maximum is 65535\n";
-			continue;
+		if ($port_str == "") {
+			$port = 22;
+		} else {
+			if (!preg_match('/^[0-9]+$/', $port_str)) {
+				$errors .= "- Line $line_num contains an invalid port number: $port_str\n";
+				continue;
+			}
+			$port = (int)$port_str;
+			if ($port > 65535) {
+				$errors .= "- Port number in line $line_num is too large: Got $port, maximum is 65535\n";
+				continue;
+			}
 		}
 		if ($cells[2] === "") {
 			$errors .= "- Line $line_num contains an empty admin field. Each server needs at least one admin or admin group.\n";
