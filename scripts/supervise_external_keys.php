@@ -32,6 +32,7 @@ foreach ($keys_in_db as $key) {
 $servers = $server_dir->list_servers([], ['key_management' => ['keys']]);
 $keys = [];
 foreach ($servers as $server) {
+	$ssh = null;
 	$error_string = "";
 	$start_time = date('c');
 	try {
@@ -57,7 +58,7 @@ foreach ($servers as $server) {
 	// If sync is on error state but key supervision succeeds, this may be because the
 	// target server recently recovered from downtime.
 	// In this case, no false-negative status file will be placed.
-	if ($server->key_supervision_error !== null || $server->sync_status === 'sync success') {
+	if ($ssh != null && ($server->key_supervision_error !== null || $server->sync_status === 'sync success')) {
 		try {
 			$server->update_status_file($ssh);
 		} catch (SSHException $e) {

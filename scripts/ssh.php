@@ -15,6 +15,9 @@
 ## limitations under the License.
 ##
 
+use phpseclib3\Net\SFTP;
+use phpseclib3\Crypt\PublicKeyLoader;
+
 class SSHException extends Exception {}
 
 /**
@@ -29,11 +32,6 @@ class SSH {
 	private $connection;
 
 	/**
-	 * An sftp access handle as given by ssh2_sftp(). Lazily initialized when needed (see get_sftp())
-	 */
-	private $sftp;
-
-	/**
 	 * Create a new ssh connection instance using the given handle
 	 * @param resource $connection The opened ssh connection handle
 	 */
@@ -43,15 +41,15 @@ class SSH {
 
 	/**
 	 * Open an ssh connection to the given server using public-key authentication.
-	 * The fingerprint is given by reference. Initialize it with null for the first connection.
-	 * If null is given, it is modified to the actual fingerprint. In future versions,
-	 * it might also be modified if the format or algorithm for the fingerprint changes.
+	 * The host key is given by reference. Initialize it with null for the first connection.
+	 * If null is given, it is modified to the actual host key. In future versions,
+	 * it might also be modified if the format or algorithm for the host key changes.
 	 *
 	 * @param string $host Hostname of the ssh server
 	 * @param int $port Port number of the ssh server
 	 * @param string $pubkey_file_path Location of the public key file to use
 	 * @param string $privkey_file_path Location of the private key file to use
-	 * @param string &$fingerprint Reference to the fingerprint value
+	 * @param string &$host_key Reference to the host key value
 	 * @throws SSHException If the connection fails (e.g. host unreachable, wrong fingerprint, failed to authenticate)
 	 */
 	public static function connect_with_pubkey(
@@ -60,29 +58,28 @@ class SSH {
 		string $username,
 		string $pubkey_file_path,
 		string $privkey_file_path,
-		?string &$fingerprint
+		?string &$host_key
 	): SSH {
 		try {
-			$connection = ssh2_connect($host, $port);
+			$ssh = new SFTP($host, $port);
 		} catch(ErrorException $e) {
 			throw new SSHException("Failed to connect to ssh server", null, $e);
 		}
-		$host_fingerprint = ssh2_fingerprint($connection, SSH2_FINGERPRINT_MD5 | SSH2_FINGERPRINT_HEX);
-		if ($fingerprint === null) {
-			$fingerprint = $host_fingerprint;
-		} else if ($fingerprint != $host_fingerprint) {
+		$received_key = $ssh->getServerPublicHostKey();
+		if ($host_key === null || $host_key === "") {
+			$host_key = $received_key;
+		} else if ($host_key != $received_key) {
 			throw new SSHException("SSH host key fingerprint does not match");
 		}
-		try {
-			ssh2_auth_pubkey_file($connection, $username, $pubkey_file_path, $privkey_file_path);
-		} catch(ErrorException $e) {
+		$key = PublicKeyLoader::load(file_get_contents("config/keys-sync"));
+		if (!$ssh->login($username, $key)) {
 			throw new SSHException("SSH pubkey authentication failed");
 		}
-		return new SSH($connection);
+		return new SSH($ssh);
 	}
 
 	/**
-	 * Execute the given command and return a stream for communication (stdin, stdout)
+	 * Execute the given command and return its output
 	 *
 	 * @param string $command Shell command to execute
 	 * @throws SSHException If starting the command fails
@@ -90,14 +87,10 @@ class SSH {
 	 */
 	public function exec(string $command): string {
 		try {
-			$stream = ssh2_exec($this->connection, $command);
+			return $this->connection->exec($command);
 		} catch (ErrorException $e) {
 			throw new SSHException("Failed to execute the command: $command", null, $e);
 		}
-		stream_set_blocking($stream, true);
-		$output = stream_get_contents($stream);
-		fclose($stream);
-		return $output;
 	}
 
 	/**
@@ -108,12 +101,11 @@ class SSH {
 	 * @return string The file content
 	 */
 	public function file_get_contents(string $filename): string {
-		try {
-			$sftp = $this->get_sftp();
-			return file_get_contents("ssh2.sftp://$sftp/$filename");
-		} catch (ErrorException $e) {
-			throw new SSHException("Could not read file $filename", null, $e);
+		$result = $this->connection->get($filename);
+		if ($result === false) {
+			throw new SSHException("Could not read file $filename");
 		}
+		return $result;
 	}
 
 	/**
@@ -145,11 +137,8 @@ class SSH {
 	 * @throws SSHException If the operation fails
 	 */
 	public function file_put_contents(string $filename, string $content) {
-		try {
-			$sftp = $this->get_sftp();
-			file_put_contents("ssh2.sftp://$sftp/$filename", $content);
-		} catch (ErrorException $e) {
-			throw new SSHException("Could not write to file $filename", null, $e);
+		if ($this->connection->put($filename, $content) === false) {
+			throw new SSHException("Could not write to file $filename");
 		}
 	}
 
@@ -160,27 +149,8 @@ class SSH {
 	 * @throws SSHException If the delete operation fails
 	 */
 	public function unlink(string $filename) {
-		try {
-			$sftp = $this->get_sftp();
-			ssh2_sftp_unlink($sftp, $filename);
-		} catch (ErrorException $e) {
-			throw new SSHException("Could not unlink file $filename", null, $e);
+		if ($this->connection->delete($filename) === false) {
+			throw new SSHException("Could not unlink file $filename");
 		}
-	}
-
-	/**
-	 * Initialize the sftp subsystem if not done already, and return the sftp handle.
-	 * @return resource The created or stored handle for sftp access
-	 * @throws SSHException If the initialization of the subsystem fails
-	 */
-	private function get_sftp() {
-		if ($this->sftp === null) {
-			$sftp = ssh2_sftp($this->connection);
-			if ($sftp === false) {
-				throw new SSHException("Could not initialize the sftp subsystem");
-			}
-			$this->sftp = $sftp;
-		}
-		return $this->sftp;
 	}
 }

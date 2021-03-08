@@ -111,7 +111,7 @@ if(isset($_POST['sync']) && ($server_admin || $active_user->admin)) {
 		$server->update_ldap_access_options($options);
 		$server->hostname = $hostname;
 		$server->port = $_POST['port'];
-		if($_POST['rsa_key_fingerprint'] == '') $server->rsa_key_fingerprint = null;
+		if($_POST['host_key'] == '') $server->host_key = null;
 		$server->key_management = $_POST['key_management'];
 		$server->authorization = $_POST['authorization'];
 		try {
@@ -126,7 +126,7 @@ if(isset($_POST['sync']) && ($server_admin || $active_user->admin)) {
 		}
 	}
 } elseif(isset($_POST['edit_server']) && $server_admin && $server_admin_can_reset_host_key) {
-	if($_POST['rsa_key_fingerprint'] == '') $server->rsa_key_fingerprint = null;
+	if($_POST['host_key'] == '') $server->host_key = null;
 	$server->update();
 	redirect('#settings');
 } elseif(isset($_POST['request_access'])) {
@@ -292,7 +292,7 @@ if(isset($_POST['sync']) && ($server_admin || $active_user->admin)) {
 		$content->set('last_sync', $server->get_last_sync_event());
 		$content->set('sync_requests', $server->list_sync_requests());
 		$content->set('matching_servers_by_ip', $server_dir->list_servers(array(), array('ip_address' => $server->ip_address, 'key_management' => array('keys'))));
-		$content->set('matching_servers_by_host_key', $server_dir->list_servers(array(), array('rsa_key_fingerprint' => $server->rsa_key_fingerprint, 'key_management' => array('keys'))));
+		$content->set('matching_servers_by_host_key', $server_dir->list_servers(array(), array('host_key' => $server->host_key, 'key_management' => array('keys'))));
 		$content->set('all_groups', $all_groups);
 		$content->set('all_servers', $all_servers);
 		$content->set('all_accounts', $all_accounts);

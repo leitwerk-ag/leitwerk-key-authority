@@ -62,7 +62,7 @@ class Server extends Record {
 			case 'custom_keys':
 				$resync = true;
 				break;
-			case 'rsa_key_fingerprint':
+			case 'host_key':
 				if(empty($change->new_value)) $resync = true;
 				break;
 			}
@@ -572,13 +572,13 @@ class Server extends Record {
 			'keys-sync',
 			'config/keys-sync.pub',
 			'config/keys-sync',
-			$this->rsa_key_fingerprint
+			$this->host_key
 		);
 		$this->update(); // fingerprint might have changed
 
 		// Check for host key collisions
 		if(!isset($config['security']) || !isset($config['security']['host_key_collision_protection']) || $config['security']['host_key_collision_protection'] == 1) {
-			$matching_servers = $server_dir->list_servers(array(), array('rsa_key_fingerprint' => $this->rsa_key_fingerprint, 'key_management' => array('keys')));
+			$matching_servers = $server_dir->list_servers(array(), array('host_key' => $this->host_key, 'key_management' => array('keys')));
 			if(count($matching_servers) > 1) {
 				throw new SSHException("Multiple hosts with same host key.");
 			}

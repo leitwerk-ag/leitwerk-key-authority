@@ -277,7 +277,6 @@ function sync_server($id, $only_username = null, $preview = false) {
 			$sha1sums[$matches[2]] = $matches[1];
 		}
 	}
-	fclose($stream);
 	foreach($keyfiles as $username => $keyfile) {
 		if(is_null($only_username) || $username == $only_username) {
 			if(isset($sha1sums[$username])) {
