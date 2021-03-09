@@ -182,7 +182,7 @@
 				<input type="number" id="port" name="port" class="form-control" value="22" required>
 			</div>
 			<div class="form-group">
-				<label for="jumphosts">Jumphosts</label>
+				<label for="jumphosts">Jumphosts (<a href="<?php outurl('/help#jumphost_format')?>">format</a>)</label>
 				<input type="text" id="jumphosts" name="jumphosts" pattern="[^@]+@[a-zA-Z0-9\-.\u0080-\uffff]+(:[0-9]+)?(,[^@]+@[a-zA-Z0-9\-.\u0080-\uffff]+(:[0-9]+)?)*" class="form-control">
 			</div>
 			<div class="form-group">

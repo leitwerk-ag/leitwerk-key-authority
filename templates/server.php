@@ -285,7 +285,7 @@
 				</div>
 			</div>
 			<div class="form-group">
-				<label for="host_key" class="col-sm-2 control-label">Jumphosts</label>
+				<label for="host_key" class="col-sm-2 control-label">Jumphosts (<a href="<?php outurl('/help#jumphost_format')?>">format</a>)</label>
 				<div class="col-sm-10">
 					<input type="text" id="jumphosts" name="jumphosts" value="<?php out($this->get('server')->jumphosts)?>" pattern="[^@]+@[a-zA-Z0-9\-.\u0080-\uffff]+(:[0-9]+)?(,[^@]+@[a-zA-Z0-9\-.\u0080-\uffff]+(:[0-9]+)?)*" class="form-control">
 				</div>
