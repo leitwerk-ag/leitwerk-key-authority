@@ -211,13 +211,14 @@
 		<p>Columns:</p>
 		<ol>
 			<li>The dns name of the server</li>
-			<li>The port number</li>
+			<li>The port number (optional, if empty 22 is assumed)</li>
+			<li>A list of jumphosts (optional, may be empty) see <a href="<?php outurl('/help#jumphost_format')?>">format specification</a></li>
 			<li>A semicolon-separated list of admin login names and admin group names. At least one admin or admin group is needed per server.</li>
 		</ol>
 		<h4>Example</h4>
-		<pre>host1.example.com,22,admin1
-host2.example.com,2222,admin1;adm_group4
-host3.example.com,22,adm_group4;admin2</pre>
+		<pre>host1.example.com,,"root@j1.example.com:7022,keys-sync@j2.example.com",admin1
+host2.example.com,2222,,admin1;adm_group4
+host3.example.com,22,,adm_group4;admin2</pre>
 		<form method="post" action="<?php outurl($this->data->relative_request_url)?>">
 			<?php out($this->get('active_user')->get_csrf_field(), ESC_NONE) ?>
 			<div class="form-group">

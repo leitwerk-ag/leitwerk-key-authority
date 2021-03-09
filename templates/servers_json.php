@@ -22,6 +22,11 @@ foreach($this->get('servers') as $server) {
 	$jsonserver->uuid = $server->uuid;
 	$jsonserver->hostname = $server->hostname;
 	$jsonserver->port = $server->port;
+	if ($server->jumphosts == "") {
+		$jsonserver->jumphosts = [];
+	} else {
+		$jsonserver->jumphosts = explode(",", $server->jumphosts);
+	}
 	$jsonserver->key_management = $server->key_management;
 	$jsonserver->sync_status = $server->sync_status;
 	if($this->get('active_user')->admin) {
