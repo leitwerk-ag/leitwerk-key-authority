@@ -24,13 +24,18 @@ class ServerDirectory extends DBDirectory {
 	* Create the new server in the database.
 	* @param Server $server object to add
 	* @throws ServerAlreadyExistsException if a server with that hostname already exists
+	* @throws InvalidJumphostsException If the list of jumphosts is syntactically incorrect
 	*/
 	public function add_server(Server $server) {
 		$hostname = $server->hostname;
 		$port = $server->port;
+		$jumphosts = $server->jumphosts;
+		if (! Server::jumphosts_valid($jumphosts)) {
+			throw new InvalidJumphostsException();
+		}
 		try {
-			$stmt = $this->database->prepare("INSERT INTO server SET hostname = ?, port = ?");
-			$stmt->bind_param('sd', $hostname, $port);
+			$stmt = $this->database->prepare("INSERT INTO server SET hostname = ?, port = ?, jumphosts = ?");
+			$stmt->bind_param('sds', $hostname, $port, $jumphosts);
 			$stmt->execute();
 			$server->id = $stmt->insert_id;
 			$stmt->close();
@@ -193,4 +198,5 @@ class ServerDirectory extends DBDirectory {
 
 class ServerNotFoundException extends Exception {}
 class ServerAlreadyExistsException extends Exception {}
+class InvalidJumphostsException extends Exception {}
 class ServerSearchInvalidRegexpException extends Exception {}

@@ -1,6 +1,7 @@
 <?php
 ##
 ## Copyright 2013-2017 Opera Software AS
+## Modifications Copyright 2021 Leitwerk AG
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -178,6 +179,10 @@
 			<div class="form-group">
 				<label for="port">SSH port number</label>
 				<input type="number" id="port" name="port" class="form-control" value="22" required>
+			</div>
+			<div class="form-group">
+				<label for="jumphosts">Jumphosts</label>
+				<input type="text" id="jumphosts" name="jumphosts" pattern="[^@]+@[a-zA-Z0-9\-.\u0080-\uffff]+(:[0-9]+)?(,[^@]+@[a-zA-Z0-9\-.\u0080-\uffff]+(:[0-9]+)?)*" class="form-control">
 			</div>
 			<div class="form-group">
 				<label for="server_admin">Administrators</label>

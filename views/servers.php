@@ -1,6 +1,7 @@
 <?php
 ##
 ## Copyright 2013-2017 Opera Software AS
+## Modifications Copyright 2021 Leitwerk AG
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -46,6 +47,7 @@ if(isset($_POST['add_server']) && ($active_user->admin)) {
 			$server = new Server;
 			$server->hostname = $hostname;
 			$server->port = $_POST['port'];
+			$server->jumphosts = $_POST['jumphosts'];
 			try {
 				$server_dir->add_server($server);
 				foreach($admins as $admin) {
@@ -58,6 +60,12 @@ if(isset($_POST['add_server']) && ($active_user->admin)) {
 			} catch(ServerAlreadyExistsException $e) {
 				$alert = new UserAlert;
 				$alert->content = 'Server \'<a href="'.rrurl('/servers/'.urlencode($hostname)).'" class="alert-link">'.hesc($hostname).'</a>\' is already known by Leitwerk Key Authority.';
+				$alert->escaping = ESC_NONE;
+				$alert->class = 'danger';
+				$active_user->add_alert($alert);
+			} catch (InvalidJumphostsException $e) {
+				$alert = new UserAlert;
+				$alert->content = 'The list of jumphosts has an invalid format.';
 				$alert->escaping = ESC_NONE;
 				$alert->class = 'danger';
 				$active_user->add_alert($alert);

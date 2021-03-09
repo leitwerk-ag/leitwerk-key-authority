@@ -57,6 +57,7 @@ class Server extends Record {
 		foreach($changes as $change) {
 			switch($change->field) {
 			case 'hostname':
+			case 'jumphosts':
 			case 'key_management':
 			case 'authorization':
 			case 'custom_keys':
@@ -743,6 +744,17 @@ class Server extends Record {
 			$unnoticed[] = new ExternalKeyOccurrence($row['id'], $attributes);
 		}
 		return $unnoticed;
+	}
+
+	/**
+	 * Check if a given jumphosts string is syntactically correct.
+	 *
+	 * @param string $jumphosts The string naming all jumphosts
+	 * @return bool True if the string looks correct, false if not
+	 */
+	public static function jumphosts_valid(string $jumphosts): bool {
+		$one_jumphost_regex = "[^@]+@[a-zA-Z0-9\\-.\x80-\xff]+(:[0-9]+)?";
+		return preg_match("|^($one_jumphost_regex(,$one_jumphost_regex)*)?\$|", $jumphosts);
 	}
 }
 

@@ -92,6 +92,29 @@ $security_config = $this->get('security_config');
 			</div>
 		</div>
 	</div>
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h2 class="panel-title">
+				<a data-toggle="collapse" data-parent="#help" href="#jumphost_format">
+					Jumphost list format
+				</a>
+			</h2>
+		</div>
+		<div id="jumphost_format" class="panel-collapse collapse">
+			<div class="panel-body">
+				<p>It is possible to connect to target servers via one or more jumphosts. The hosts must be listed as comma-separated chain, in the order from Leitwerk Key Authority to target server.</p>
+				<p>Each entry has the format user@hostname:port (but the ":port" part is optional).</p>
+				<h3>Example</h3>
+				<code>root@host1.example.com,keys-sync@host2.local:2222</code>
+				<p>This will do the following:</p>
+				<ol>
+					<li>Connect from LKA to host1.example.com, authenticating as root</li>
+					<li>Tunnel through host1 to connect to host2.local on port 2222, authenticating as keys-sync</li>
+					<li>Tunnel through host1 and host2 to connect to the target server</li>
+				</ol>
+			</div>
+		</div>
+	</div>
 	<h2>Frequently asked questions</h2>
 	<div class="panel panel-default">
 		<div class="panel-heading">

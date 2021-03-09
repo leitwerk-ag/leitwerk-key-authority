@@ -1,6 +1,7 @@
 <?php
 ##
 ## Copyright 2013-2017 Opera Software AS
+## Modifications Copyright 2021 Leitwerk AG
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -89,9 +90,13 @@ if(isset($_POST['sync']) && ($server_admin || $active_user->admin)) {
 	redirect('#accounts');
 } elseif(isset($_POST['edit_server']) && $active_user->admin) {
 	$hostname = trim($_POST['hostname']);
+	$jumphosts = trim($_POST['jumphosts']);
 	if(!preg_match('|.*\..*\..*|', $hostname)) {
 		$content = new PageSection('invalid_hostname');
 		$content->set('hostname', $hostname);
+	} else if (!Server::jumphosts_valid($jumphosts)) {
+		$content = new PageSection('invalid_jumphosts');
+		$content->set('jumphosts', $jumphosts);
 	} else {
 		$options = array();
 		if(isset($_POST['access_option'])) {
@@ -112,6 +117,7 @@ if(isset($_POST['sync']) && ($server_admin || $active_user->admin)) {
 		$server->hostname = $hostname;
 		$server->port = $_POST['port'];
 		if($_POST['host_key'] == '') $server->host_key = null;
+		$server->jumphosts = $jumphosts;
 		$server->key_management = $_POST['key_management'];
 		$server->authorization = $_POST['authorization'];
 		try {
