@@ -86,10 +86,16 @@ class LDAP {
 		return '';
 	}
 
-	public function search($basedn, $filter, $fields = array(), $sort = array()) {
+	public function search($basedn, $filter, $fields = array(), $sort = array(), $onelevel = false) {
 		if(is_null($this->conn)) $this->connect();
-		if(empty($fields)) $r = @ldap_search($this->conn, $basedn, $filter);
-		else $r = @ldap_search($this->conn, $basedn, $filter, $fields);
+		if(empty($fields)) {
+			$fields = ["*"];
+		}
+		if ($onelevel) {
+			$r = @ldap_list($this->conn, $basedn, $filter, $fields);
+		} else {
+			$r = @ldap_search($this->conn, $basedn, $filter, $fields);
+		}
 		$sort = array_reverse($sort);
 		foreach($sort as $field) {
 			@ldap_sort($this->conn, $r, $field);

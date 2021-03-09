@@ -1,6 +1,7 @@
 <?php
 ##
 ## Copyright 2013-2017 Opera Software AS
+## Modifications Copyright 2021 Leitwerk AG
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -14,6 +15,41 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 ##
+
+/**
+ * Load server account entities from the database, based on user input.
+ *
+ * @param string $text The multi-line account list as given by the user
+ * @param array $errors Reference to an array where errors can be appended
+ * @return array Database entities of the server accounts
+ */
+function find_server_accounts(string $text, array &$errors): array {
+	global $server_dir;
+
+	$lines = explode("\n", $text);
+	$accounts = [];
+	$line_num = 0;
+	foreach ($lines as $line) {
+		$line_num++;
+		$line = trim($line);
+		if ($line == "") {
+			continue;
+		}
+		if (!preg_match('/^([^@]+)@([^@]+)$/', $line, $matches)) {
+			$errors[] = "Line $line_num has an invalid format: \"$line\"";
+			continue;
+		}
+		try {
+			$server = $server_dir->get_server_by_hostname($matches[2]);
+			$accounts[] = $server->get_account_by_name($matches[1]);
+		} catch(ServerNotFoundException $e) {
+			$errors[] = "Line $line_num: Server \"{$matches[2]}\" could not be found.";
+		} catch(ServerAccountNotFoundException $e) {
+			$errors[] = "Line $line_num: Account \"{$matches[1]}\" could not be found on server \"{$matches[2]}\".";
+		}
+	}
+	return $accounts;
+}
 
 try {
 	$group = $group_dir->get_group_by_name($router->vars['group']);
@@ -76,6 +112,45 @@ if(isset($_POST['add_admin']) && ($active_user->admin)) {
 			$content = new PageSection('not_admin');
 		}
 	}
+} elseif (isset($_POST['add_members']) && ($group_admin || $active_user->admin)) {
+	$errors = [];
+	$server_accounts = find_server_accounts($_POST['accounts'], $errors);
+	$result = $group->add_multiple_accounts($server_accounts, $errors);
+	if ($result !== null) {
+		$alert = new UserAlert;
+		if ($result['added'] == 1) {
+			$alert->content = "1 account has been added to the group";
+		} else {
+			$alert->content = "{$result['added']} accounts have been added to the group";
+		}
+		if ($result['existing'] == 1) {
+			$alert->content .= ", 1 account was already member";
+		} elseif ($result['existing'] > 1) {
+			$alert->content .= ", {$result['existing']} accounts were already member";
+		}
+		$active_user->add_alert($alert);
+	}
+	if (!empty($errors)) {
+		$alert = new UserAlert;
+		$alert->content = "";
+		if ($result === null) {
+			$alert->content = "Could not add the server accounts to this group. ";
+		}
+		if (count($errors) == 1) {
+			$alert->content .= "The following error occurred:<ul>";
+		} else {
+			$alert->content .= "The following errors occurred:<ul>";
+		}
+		foreach ($errors as $error) {
+			$masked = hesc($error);
+			$alert->content .= "<li>$masked</li>";
+		}
+		$alert->content .= "</ul>";
+		$alert->class = "danger";
+		$alert->escaping = ESC_NONE;
+		$active_user->add_alert($alert);
+	}
+	redirect('#members');
 } elseif(isset($_POST['delete_member']) && ($group_admin || $active_user->admin)) {
 	foreach($group_members as $member) {
 		if($member->entity_id == $_POST['delete_member']) {

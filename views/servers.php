@@ -16,6 +16,123 @@
 ## limitations under the License.
 ##
 
+/**
+ * Import the given hosts of the csv document string. The import must be
+ * entirely successful or it must fail entirely. In case of a failure,
+ * error strings are stored in the variable referenced by $error_ref.
+ * On success, an empty string is stored in that reference.
+ *
+ * @param string $csv_document The content of the csv document to import
+ * @param string $error_ref Reference to a variable where error messages are stored
+ *  @return array|NULL Prepared information about the hosts, needed for the bulk import or null in case of an error
+ */
+function prepare_import(string $csv_document, &$error_ref): ?array {
+	$errors = "";
+	$lines = explode("\n", $csv_document);
+	$line_num = 0;
+	$entries = [];
+	foreach ($lines as $line) {
+		$line_num++;
+		if ($line === "") {
+			continue;
+		}
+		$cells = str_getcsv($line, ",", "\"", "");
+		$count = count($cells);
+		if ($count != 3) {
+			$errors .= "- Line $line_num contains $count columns, but expected 3\n";
+			continue;
+		}
+		$hostname = $cells[0];
+		$port_str = $cells[1];
+		if ($port_str == "") {
+			$port = 22;
+		} else {
+			if (!preg_match('/^[0-9]+$/', $port_str)) {
+				$errors .= "- Line $line_num contains an invalid port number: $port_str\n";
+				continue;
+			}
+			$port = (int)$port_str;
+			if ($port > 65535) {
+				$errors .= "- Port number in line $line_num is too large: Got $port, maximum is 65535\n";
+				continue;
+			}
+		}
+		if ($cells[2] === "") {
+			$errors .= "- Line $line_num contains an empty admin field. Each server needs at least one admin or admin group.\n";
+			continue;
+		}
+		$admin_names = explode(";", $cells[2]);
+		$admins = [];
+		foreach ($admin_names as $name) {
+			$entity = user_or_group_by_name($name);
+			if ($entity !== null) {
+				$admins[] = $entity;
+			} else {
+				$errors .= "- Admin in line $line_num: \"$name\" could not be found, neither as user nor as group.\n";
+			}
+		}
+		$entries[] = [
+			"hostname" => $hostname,
+			"port" => $port,
+			"admins" => $admins,
+		];
+	}
+	$error_ref = $errors;
+	return $errors == "" ? $entries : null;
+}
+
+/**
+ * Search for a user with the given login name. If no such user exists, search for
+ * a group with the given name. If also no matching group exists, null is returned.
+ *
+ * @param string $name The name of the user/group
+ * @return Entity|NULL The user or group, or null if nothing was found
+ */
+function user_or_group_by_name(string $name): ?Entity {
+	global $user_dir, $group_dir;
+
+	try {
+		return $user_dir->get_user_by_uid($name);
+	} catch(UserNotFoundException $e) {
+		try {
+			return $group_dir->get_group_by_name($name);
+		} catch(GroupNotFoundException $e) {
+			return null;
+		}
+	}
+}
+
+/**
+ * Import multiple servers based on the data, that has been prepared.
+ *
+ * @param array $entries Prepared data: array of server entries
+ * @return array Statistics array about the number of added servers and number of already existing servers
+ */
+function run_import(array $entries): array {
+	global $server_dir;
+
+	$imported = 0;
+	$existed = 0;
+	foreach ($entries as $entry) {
+		$server = new Server;
+		$server->hostname = $entry['hostname'];
+		$server->port = $entry['port'];
+		try {
+			$server_dir->add_server($server);
+			foreach($entry['admins'] as $admin) {
+				$server->add_admin($admin);
+			}
+			$imported++;
+		} catch(ServerAlreadyExistsException $e) {
+			$existed++;
+		}
+	}
+	return [
+		"imported" => $imported,
+		"existed" => $existed,
+	];
+}
+
 if(isset($_POST['add_server']) && ($active_user->admin)) {
 	$hostname = trim($_POST['hostname']);
 	if(!preg_match('|.*\..*\..*|', $hostname)) {
@@ -25,22 +142,11 @@ if(isset($_POST['add_server']) && ($active_user->admin)) {
 		$admin_names = preg_split('/[\s,]+/', $_POST['admins'], null, PREG_SPLIT_NO_EMPTY);
 		$admins = array();
 		foreach($admin_names as $admin_name) {
-			$admin_name = trim($admin_name);
-			try {
-				$new_admin = null;
-				$new_admin = $user_dir->get_user_by_uid($admin_name);
-				if(isset($new_admin)) {
-					$admins[] = $new_admin;
-				}
-			} catch(UserNotFoundException $e) {
-				try {
-					$new_admin = $group_dir->get_group_by_name($admin_name);
-					if(isset($new_admin)) {
-						$admins[] = $new_admin;
-					}
-				} catch(GroupNotFoundException $e) {
-					$content = new PageSection('user_not_found');
-				}
+			$new_admin = user_or_group_by_name($admin_name);
+			if ($new_admin !== null) {
+				$admins[] = $new_admin;
+			} else {
+				$content = new PageSection('user_not_found');
 			}
 		}
 		if(count($admins) == count($admin_names)) {
@@ -73,6 +179,33 @@ if(isset($_POST['add_server']) && ($active_user->admin)) {
 			redirect('#add');
 		}
 	}
+} else if (isset($_POST['add_bulk']) && ($active_user->admin)) {
+	$csv_document = $_POST['import'];
+	$entries = prepare_import($csv_document, $errors);
+	$alert = new UserAlert;
+	if ($entries !== null) {
+		$result = run_import($entries);
+		if ($result['imported'] == 1) {
+			$msg = "1 server has been imported";
+		} else {
+			$msg = "{$result['imported']} servers have been imported";
+		}
+		if ($result['existed'] > 0) {
+			if ($result['existed'] == 1) {
+				$msg .= ", 1 server is already known by Leitwerk Key Authority";
+			} else {
+				$msg .= ", {$result['existed']} servers are already known by Leitwerk Key Authority";
+			}
+		}
+		$alert->content = $msg;
+	} else {
+		$error_msg = hesc("Failed to import server list:\n$errors");
+		$alert->content = str_replace("\n", "<br>", $error_msg);
+		$alert->escaping = ESC_NONE;
+		$alert->class = 'danger';
+	}
+	$active_user->add_alert($alert);
+	redirect("#add_bulk");
 } else {
 	$defaults = array();
 	$defaults['key_management'] = array('keys');

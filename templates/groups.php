@@ -120,16 +120,11 @@
 		<h3>Connect ldap group</h3>
 		<form method="post" action="<?php outurl($this->data->relative_request_url)?>" class="form-inline">
 			<?php out($this->get('active_user')->get_csrf_field(), ESC_NONE) ?>
+			<div class="ldap-treeview">For the tree-view of ldap groups, javascript is necessary.</div>
 			<div class="form-group">
 				<label for="name" class="sr-only">Group name</label>
-				<select id="ldap_group" name="ldap_group" class="form-control" required>
-					<option value="">-- Please choose a group --</option>
-					<?php foreach($this->get('all_ldap_groups') as $ldap_group) { ?>
-					<option value="<?php out($ldap_group['objectguid']) ?>"><?php out($ldap_group['samaccountname']) ?></option>
-					<?php } ?>
-				</select>
 			</div>
-			<button type="submit" name="add_ldap_group" value="1" class="btn btn-primary">Connect group</button>
+			<button type="submit" name="add_ldap_group" value="1" class="btn btn-primary">Connect selected groups</button>
 		</form>
 	</div>
 	<?php } ?>
