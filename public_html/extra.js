@@ -379,7 +379,7 @@ $(function() {
 	});
 });
 
-// Server add form - multiple admin autocomplete
+// Server add form - multiple leader autocomplete
 $(function() {
 	var server_admin = $('input#server_admin');
 	server_admin.each(function() {

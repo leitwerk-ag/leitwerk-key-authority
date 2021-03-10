@@ -38,11 +38,11 @@ class EventDirectory extends DBDirectory {
 			if($value) {
 				switch($field) {
 				case 'admin':
-					// Filter for events from servers that the user is an admin of
+					// Filter for events from servers that the user is a leader of
 					$joins['server']['adminsearch'] = "INNER JOIN server_admin AS admin_search ON admin_search.server_id = se.server_id";
 					$where['server'][] = "admin_search.entity_id = ".intval($value);
-					// Filter for events from server accounts or groups that the user is an admin of
-					// (possibly indirectly for the former as a result of being server admin)
+					// Filter for events from server accounts or groups that the user is a leader of
+					// (possibly indirectly for the former as a result of being server leader)
 					$joins['group']['adminsearch'] = "LEFT JOIN entity_admin AS admin_search ON admin_search.entity_id = ee.entity_id";
 					$joins['group']['account'] = "LEFT JOIN server_account AS sa ON sa.entity_id = ee.entity_id";
 					$joins['group']['server'] = "LEFT JOIN server AS s ON s.id = sa.server_id";

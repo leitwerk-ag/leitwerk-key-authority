@@ -331,7 +331,7 @@ function check_missing_file($ssh, string $filename, string &$error_string) {
 }
 
 /**
- * Send an email to the serveraccount admins and server admins, informing about one new key.
+ * Send an email to the serveraccount leaders and server leaders, informing about one new key.
  * @param ExternalKey $appeared_key
  */
 function sendmail_appeared_key(ExternalKey $appeared_key)  {
@@ -374,7 +374,7 @@ function sendmail_appeared_key(ExternalKey $appeared_key)  {
 			if ($serveradmins_as_recipients) {
 				$to[$server_admin->email] = $server_admin->name;
 			} else {
-				// If every affected account has own admins, server admins will only be mentioned in cc
+				// If every affected account has own leaders, server leaders will only be mentioned in cc
 				$cc[$server_admin->email] = $server_admin->name;
 			}
 		}

@@ -126,9 +126,9 @@ class Group extends Entity {
 			$logmsg = array('action' => 'Member add', 'value' => "user:{$entity->uid}");
 			break;
 		case 'ServerAccount':
-			// We should not allow adding server accounts to a group if the active user is not an admin of that server or server account
+			// We should not allow adding server accounts to a group if the active user is not a leader of that server or server account
 			if(!$actor->admin && !$actor->admin_of($entity->server) && !$actor->admin_of($entity)) {
-				throw new InvalidArgumentException('Active user is not an administrator of the specified server account');
+				throw new InvalidArgumentException('Active user is not a leader of the specified server account');
 			}
 			$logmsg = array('action' => 'Member add', 'value' => "account:{$entity->name}@{$entity->server->hostname}");
 			break;
@@ -162,7 +162,7 @@ class Group extends Entity {
 
 	/**
 	 * Add a list of server accounts as members to this group. The active
-	 * user must be accout admin (or server admin) for all affected accounts.
+	 * user must be accout leader (or server leader) for all affected accounts.
 	 * When finished, one bulk mail is created instead of individual mails.
 	 *
 	 * @param array $accounts The server accounts to add to this group
@@ -180,7 +180,7 @@ class Group extends Entity {
 		if (!$actor->admin) {
 			foreach ($accounts as $account) {
 				if(!$actor->admin_of($account->server) && !$actor->admin_of($account)) {
-					$errors[] = "You are not an admin of the server account {$account->name}@{$account->server->hostname}";
+					$errors[] = "You are not a leader of the server account {$account->name}@{$account->server->hostname}";
 				}
 			}
 		}

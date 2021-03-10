@@ -161,11 +161,11 @@
 			</tbody>
 		</table>
 		<?php } ?>
-		<h3>Server administration</h3>
+		<h3>Server management</h3>
 		<?php if(count($this->get('user_admined_servers')) == 0) { ?>
-		<p><?php out($this->get('user')->name)?> is not an administrator for any servers.</p>
+		<p><?php out($this->get('user')->name)?> is not a leader for any servers.</p>
 		<?php } else { ?>
-		<p><?php out($this->get('user')->name)?> is an administrator for the following servers:</p>
+		<p><?php out($this->get('user')->name)?> is a leader for the following servers:</p>
 		<form method="post" action="<?php outurl($this->data->relative_request_url)?>">
 			<?php out($this->get('active_user')->get_csrf_field(), ESC_NONE) ?>
 			<table class="table" id="admined_servers">

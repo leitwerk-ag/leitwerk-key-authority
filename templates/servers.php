@@ -90,7 +90,7 @@
 					<th>Hostname</th>
 					<th>Config</th>
 					<?php if($this->get('admin')) { ?>
-					<th>Admins</th>
+					<th>Leaders</th>
 					<?php } ?>
 					<th>Status</th>
 				</tr>
@@ -139,7 +139,7 @@
 					</td>
 					<?php if($this->get('admin')) { ?>
 					<?php if(is_null($server->admins)) { ?>
-					<td<?php if($server->key_management == 'keys') out(' class="danger"', ESC_NONE)?>>Server has no administrators</td>
+					<td<?php if($server->key_management == 'keys') out(' class="danger"', ESC_NONE)?>>Server has no leaders</td>
 					<?php } else { ?>
 					<td>
 						<?php
@@ -182,7 +182,7 @@
 				<input type="number" id="port" name="port" class="form-control" value="22" required>
 			</div>
 			<div class="form-group">
-				<label for="server_admin">Administrators</label>
+				<label for="server_admin">Leaders</label>
 				<input type="text" id="server_admins" name="admins" class="form-control hidden" required>
 				<input type="text" id="server_admin" name="admin" class="form-control" placeholder="Type user/group name and press 'Enter' key" list="adminlist">
 				<datalist id="adminlist">
@@ -208,12 +208,12 @@
 		<ol>
 			<li>The dns name of the server</li>
 			<li>The port number</li>
-			<li>A semicolon-separated list of admin login names and admin group names. At least one admin or admin group is needed per server.</li>
+			<li>A semicolon-separated list of leader login names and leader group names. At least one leader or leader group is needed per server.</li>
 		</ol>
 		<h4>Example</h4>
-		<pre>host1.example.com,22,admin1
-host2.example.com,2222,admin1;adm_group4
-host3.example.com,22,adm_group4;admin2</pre>
+		<pre>host1.example.com,22,leader1
+host2.example.com,2222,leader1;ld_group4
+host3.example.com,22,ld_group4;leader2</pre>
 		<form method="post" action="<?php outurl($this->data->relative_request_url)?>">
 			<?php out($this->get('active_user')->get_csrf_field(), ESC_NONE) ?>
 			<div class="form-group">

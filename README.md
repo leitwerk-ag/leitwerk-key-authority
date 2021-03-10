@@ -13,11 +13,11 @@ Features
 * Integrate with your LDAP directory service for user authorization.
 * Automatically remove server access from people when they leave your team.
 * Provides an easy interface for your users to upload their public keys.
-* Designate server administrators and let them manage access to their own server.
+* Designate server leaders and let them manage access to their own server.
 * Create group-based access rules for easier management.
 * Specify SSH access options such as `command=`, `nopty` etc on your access rules.
 * All access changes are logged to the database and to the system logs. Granting of access is also reported by email.
-* Be notified when a server becomes orphaned (has no active administrators).
+* Be notified when a server becomes orphaned (has no active leaders).
 
 Requirements
 ------------

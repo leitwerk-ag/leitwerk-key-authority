@@ -49,10 +49,10 @@ function show_event($event) {
 		$details = 'Removed access for '.show_event_participant($json->value);
 		break;
 	case 'Administrator add':
-		$details = 'Added administrator '.show_event_participant($json->value);
+		$details = 'Added leader '.show_event_participant($json->value);
 		break;
 	case 'Administrator remove':
-		$details = 'Removed administrator '.show_event_participant($json->value);
+		$details = 'Removed leader '.show_event_participant($json->value);
 		break;
 	case 'Member add':
 		$details = 'Added member '.show_event_participant($json->value);
