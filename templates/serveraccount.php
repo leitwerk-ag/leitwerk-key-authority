@@ -54,7 +54,7 @@ default: $sync_class = 'warning'; $sync_message = 'Not synced'; break;
 	<?php } ?>
 	<li><a href="#pubkeys" data-toggle="tab">Public keys</a></li>
 	<li><a href="#outbound" data-toggle="tab">Outbound access</a></li>
-	<li><a href="#admins" data-toggle="tab">Administrators</a></li>
+	<li><a href="#admins" data-toggle="tab">Leaders</a></li>
 	<li><a href="#log" data-toggle="tab">Log</a></li>
 </ul>
 
@@ -499,9 +499,9 @@ default: $sync_class = 'warning'; $sync_message = 'Not synced'; break;
 		<?php } ?>
 	</div>
 	<div class="tab-pane fade" id="admins">
-		<h2 class="sr-only">Account administrators</h2>
+		<h2 class="sr-only">Account leaders</h2>
 		<?php if(count($this->get('admins')) == 0) { ?>
-		<p>This account does not have any administrators assigned.</p>
+		<p>This account does not have any leaders assigned.</p>
 		<?php } else { ?>
 		<form method="post" action="<?php outurl($this->data->relative_request_url)?>">
 			<?php out($this->get('active_user')->get_csrf_field(), ESC_NONE) ?>
@@ -522,7 +522,7 @@ default: $sync_class = 'warning'; $sync_message = 'Not synced'; break;
 						<td><?php out($admin->name); if(!$admin->active) out(' <span class="label label-default">Inactive</span>', ESC_NONE) ?></td>
 						<?php if($this->get('admin') || $this->get('server_admin')) { ?>
 						<td>
-							<button type="submit" name="delete_admin" value="<?php out($admin->id) ?>" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-trash"></span> Remove admin</button>
+							<button type="submit" name="delete_admin" value="<?php out($admin->id) ?>" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-trash"></span> Remove leader</button>
 						</td>
 						<?php } ?>
 					</tr>
@@ -534,7 +534,7 @@ default: $sync_class = 'warning'; $sync_message = 'Not synced'; break;
 		<?php if($this->get('admin') || $this->get('server_admin')) { ?>
 		<form method="post" action="<?php outurl($this->data->relative_request_url)?>" class="form-inline">
 			<?php out($this->get('active_user')->get_csrf_field(), ESC_NONE) ?>
-			<h3>Add administrator</h3>
+			<h3>Add leader</h3>
 			<div class="form-group">
 				<label for="user_name" class="sr-only">Account name</label>
 				<input type="text" id="user_name" name="user_name" class="form-control" placeholder="User name" required list="userlist">
@@ -544,7 +544,7 @@ default: $sync_class = 'warning'; $sync_message = 'Not synced'; break;
 					<?php } ?>
 				</datalist>
 			</div>
-			<button type="submit" name="add_admin" value="1" class="btn btn-primary">Add administrator to account</button>
+			<button type="submit" name="add_admin" value="1" class="btn btn-primary">Add leader to account</button>
 		</form>
 		<?php } ?>
 	</div>

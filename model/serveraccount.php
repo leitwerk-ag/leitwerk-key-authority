@@ -100,28 +100,28 @@ class ServerAccount extends Entity {
 	}
 
 	/**
-	* Add the specified user as an administrator of the account.
+	* Add the specified user as a leader of the account.
 	* This action is logged with a warning level as it is increasing an access level.
-	* @param User $user to add as administrator
+	* @param User $user to add as leader
 	*/
 	public function add_admin(User $user) {
 		global $config;
 		parent::add_admin($user);
 		$url = $config['web']['baseurl'].'/servers/'.urlencode($this->server->hostname).'/accounts/'.urlencode($this->name);
 		$email = new Email;
-		$email->subject = "Administrator for {$this->name}@{$this->server->hostname}";
+		$email->subject = "Leader for {$this->name}@{$this->server->hostname}";
 		$email->add_cc($config['email']['report_address'], $config['email']['report_name']);
 		$email->add_recipient($user->email, $user->name);
-		$email->body = "{$this->active_user->name} ({$this->active_user->uid}) has added you as an administrator for the '{$this->name}' account on {$this->server->hostname}.  You can administer access to this account from <$url>";
+		$email->body = "{$this->active_user->name} ({$this->active_user->uid}) has added you as a leader for the '{$this->name}' account on {$this->server->hostname}.  You can manage access to this account from <$url>";
 		$email->send();
 		$this->log(array('action' => 'Administrator add', 'value' => "user:{$user->uid}"), LOG_WARNING);
 	}
 
 	/**
-	* Remove the specified user as an administrator of the account.
+	* Remove the specified user as a leader of the account.
 	* This action is logged with a warning level as it means the removed user will no longer
 	* receive notifications for any changes done to this account.
-	* @param User $user to remove as administrator
+	* @param User $user to remove as leader
 	*/
 	public function delete_admin(User $user) {
 		parent::delete_admin($user);
@@ -130,7 +130,7 @@ class ServerAccount extends Entity {
 
 	/**
 	* Add a public key to this account for use with any outbound access rules that apply to it.
-	* An email is sent to the server admins and sec-ops to inform them of the change.
+	* An email is sent to the server leaders and sec-ops to inform them of the change.
 	* This action is logged with a warning level as it is potentially granting SSH access with the key.
 	* @param PublicKey $key to be added
 	*/
@@ -163,7 +163,7 @@ class ServerAccount extends Entity {
 
 	/**
 	* Request access for the specified entity (User/ServerAccount/Group) to this account.
-	* Stores the request and sends an email to the account admins and server admins notifying them of it.
+	* Stores the request and sends an email to the account leaders and server leaders notifying them of it.
 	* @param Entity $entity to request access for
 	*/
 	public function add_access_request(Entity $entity) {
@@ -308,7 +308,7 @@ class ServerAccount extends Entity {
 
 	/**
 	* Grant the specified entity (User/ServerAccount/Group) access to this server account.
-	* An email is sent to the account admins, server admins and sec-ops to inform them of the change.
+	* An email is sent to the account leaders, server leaders and sec-ops to inform them of the change.
 	* This action is logged with a warning level as it is granting access.
 	* @param Entity $entity to add as a group member
 	* @param array $access_options array of AccessOption rules to apply to the granted access

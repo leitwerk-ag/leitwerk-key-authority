@@ -1,6 +1,7 @@
 <?php
 ##
 ## Copyright 2013-2017 Opera Software AS
+## Modifications Copyright 2021 Leitwerk AG
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -128,6 +129,21 @@ foreach($this->get('group_members') as $member) {
 				</div>
 				<div class="form-group col-md-3">
 					<button type="submit" name="add_member" value="1" class="btn btn-primary btn-block">Add server account to group</button>
+				</div>
+			</div>
+		</form>
+		<form method="post" action="<?php outurl($this->data->relative_request_url)?>">
+			<?php out($this->get('active_user')->get_csrf_field(), ESC_NONE) ?>
+			<h3>Add multiple server accounts</h3>
+			<p>Enter a list of accounts, one per line, in the form accountname@hostname</p>
+			<div class="row">
+				<div class="form-group col-md-12">
+					<textarea name="accounts" class="form-control"></textarea>
+				</div>
+			</div>
+			<div class="row">
+				<div class="form-group col-md-3">
+					<button type="submit" name="add_members" value="1" class="btn btn-primary btn-block">Add server accounts to group</button>
 				</div>
 			</div>
 		</form>

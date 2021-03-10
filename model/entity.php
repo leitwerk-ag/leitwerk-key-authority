@@ -18,7 +18,7 @@
 
 /**
 * Abstract class that represents one of several types of entities (users, server accounts, groups)
-* which can have access rules created between them, administrators assigned, or be members of each other.
+* which can have access rules created between them, leaders assigned, or be members of each other.
 */
 abstract class Entity extends Record {
 	/**
@@ -66,9 +66,9 @@ abstract class Entity extends Record {
 	}
 
 	/**
-	* Add the specified user as an administrator of the entity.
+	* Add the specified user as a leader of the entity.
 	* Logging is performed by the inheriting classes.
-	* @param User $user to add as administrator
+	* @param User $user to add as leader
 	*/
 	public function add_admin(User $user) {
 		if(is_null($this->entity_id)) throw new BadMethodCallException('Entity must be in directory before admins can be added');
@@ -89,8 +89,8 @@ abstract class Entity extends Record {
 	}
 
 	/**
-	* Remove the specified user as an administrator of the entity.
-	* @param User $user to remove as administrator
+	* Remove the specified user as a leader of the entity.
+	* @param User $user to remove as leader
 	*/
 	public function delete_admin(User $user) {
 		if(is_null($this->entity_id)) throw new BadMethodCallException('Entity must be in directory before admins can be deleted');
@@ -103,7 +103,7 @@ abstract class Entity extends Record {
 	}
 
 	/**
-	* List all administrators of this entity.
+	* List all leaders of this entity.
 	* @return array of User objects
 	*/
 	public function list_admins() {

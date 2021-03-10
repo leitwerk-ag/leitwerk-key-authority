@@ -126,9 +126,9 @@ class Group extends Entity {
 			$logmsg = array('action' => 'Member add', 'value' => "user:{$entity->uid}");
 			break;
 		case 'ServerAccount':
-			// We should not allow adding server accounts to a group if the active user is not an admin of that server or server account
+			// We should not allow adding server accounts to a group if the active user is not a leader of that server or server account
 			if(!$actor->admin && !$actor->admin_of($entity->server) && !$actor->admin_of($entity)) {
-				throw new InvalidArgumentException('Active user is not an administrator of the specified server account');
+				throw new InvalidArgumentException('Active user is not a leader of the specified server account');
 			}
 			$logmsg = array('action' => 'Member add', 'value' => "account:{$entity->name}@{$entity->server->hostname}");
 			break;
@@ -161,6 +161,57 @@ class Group extends Entity {
 	}
 
 	/**
+	 * Add a list of server accounts as members to this group. The active
+	 * user must be accout leader (or server leader) for all affected accounts.
+	 * When finished, one bulk mail is created instead of individual mails.
+	 *
+	 * @param array $accounts The server accounts to add to this group
+	 * @param string $errors Reference to an array where errors can be appended
+	 * @return array|NULL Result array with fields 'added' and 'existing' or null in case of errors.
+	 */
+	public function add_multiple_accounts(array $accounts, array &$errors): ?array {
+		$result = [
+			"added" => 0,
+			"existing" => 0,
+		];
+		$success_list = [];
+		$actor = $this->active_user;
+		// Check all accounts first
+		if (!$actor->admin) {
+			foreach ($accounts as $account) {
+				if(!$actor->admin_of($account->server) && !$actor->admin_of($account)) {
+					$errors[] = "You are not a leader of the server account {$account->name}@{$account->server->hostname}";
+				}
+			}
+		}
+		if (!empty($errors)) {
+			return null;
+		}
+		foreach ($accounts as $account) {
+			try {
+				$stmt = $this->database->prepare("INSERT INTO group_member SET `group` = ?, entity_id = ?, add_date = UTC_TIMESTAMP(), added_by = ?");
+				$stmt->bind_param('ddd', $this->entity_id, $account->entity_id, $actor->entity_id);
+				$stmt->execute();
+				$stmt->close();
+				$logmsg = array('action' => 'Member add', 'value' => "account:{$account->name}@{$account->server->hostname}");
+				$this->log($logmsg, LOG_WARNING, $actor);
+				$success_list[] = "{$account->name}@{$account->server->hostname}";
+				$result['added']++;
+			} catch(mysqli_sql_exception $e) {
+				if($e->getCode() == 1062) {
+					$result['existing']++;
+				} else {
+					throw $e;
+				}
+			}
+		}
+		if (!empty($success_list)) {
+			$this->send_bulkmail_addaccounts($success_list);
+		}
+		return $result;
+	}
+
+	/**
 	 * Send a mail to admins informing them about the new added member of this group.
 	 *
 	 * @param Entity $entity The new member (user, server account, group) of this group
@@ -182,6 +233,36 @@ class Group extends Entity {
 				$mailbody = "The {$entity->name} group has been added to the {$this->name} group by {$actor->name} ({$actor->uid}).";
 				break;
 		}
+		$email = new Email;
+		foreach ($this->list_admins() as $admin) {
+			$email->add_recipient($admin->email, $admin->name);
+		}
+		$email->add_cc($config['email']['report_address'], $config['email']['report_name']);
+		$email->subject = $mailsubject;
+		$email->body = $mailbody;
+		$email->send();
+	}
+
+	/**
+	 * Send a mail to admins informing them about the new added server accounts of this group.
+	 *
+	 * @param array $success_list Array of strings, describing all accounts that have been added successfully
+	 */
+	private function send_bulkmail_addaccounts(array $success_list) {
+		global $config;
+		$actor = $this->active_user;
+		$count = count($success_list);
+		if ($count == 1) {
+			$mailsubject = "1 server account added to {$this->name} group by {$actor->uid}";
+			$mailbody = "The following server account has been added to the {$this->name} group by {$actor->name} ({$actor->uid}):";
+		} else {
+			$mailsubject = "{$count} server accounts added to {$this->name} group by {$actor->uid}";
+			$mailbody = "The following {$count} server accounts have been added to the {$this->name} group by {$actor->name} ({$actor->uid}):";
+		}
+		foreach ($success_list as $account_description) {
+			$mailbody .= "\n- $account_description";
+		}
+
 		$email = new Email;
 		foreach ($this->list_admins() as $admin) {
 			$email->add_recipient($admin->email, $admin->name);

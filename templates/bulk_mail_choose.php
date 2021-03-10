@@ -19,5 +19,5 @@
 <p>Choose recipients:</p>
 <ul>
 	<li><a href="<?php outurl('/bulk_mail/all_users')?>">All users</a></li>
-	<li><a href="<?php outurl('/bulk_mail/server_admins')?>">All server administrators</a></li>
+	<li><a href="<?php outurl('/bulk_mail/server_admins')?>">All server leaders</a></li>
 </ul>
