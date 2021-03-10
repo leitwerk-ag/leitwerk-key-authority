@@ -102,13 +102,13 @@
 </form>
 <?php if(count($this->get('admined_servers')) > 0) { ?>
 <h2>Your servers</h2>
-<p>You are listed as an administrator for the following servers:</p>
+<p>You are listed as a leader for the following servers:</p>
 <table class="table">
 	<thead>
 		<tr>
 			<th>Hostname</th>
 			<th>Config</th>
-			<th>Admins</th>
+			<th>Leaders</th>
 			<th>Status</th>
 		</tr>
 	</thead>

@@ -49,8 +49,8 @@ if(!empty($_POST['subject']) && !empty($_POST['body']) && !empty($router->vars['
 		$rcpt_role = 'user of';
 		break;
 	case 'server_admins':
-		$rcpt_desc = 'server admins on';
-		$rcpt_role = 'server admin on';
+		$rcpt_desc = 'server leaders on';
+		$rcpt_role = 'server leader on';
 		break;
 	default:
 		require('views/error404.php');

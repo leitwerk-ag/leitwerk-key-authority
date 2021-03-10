@@ -89,7 +89,7 @@ class User extends Entity {
 	}
 
 	/**
-	* List all events on entities and servers that this user has administrator access to
+	* List all events on entities and servers that this user has management access to
 	* @param array $include list of extra data to include in response
 	* @return array of *Event objects
 	*/
@@ -100,7 +100,7 @@ class User extends Entity {
 	}
 
 	/**
-	* List all servers that are administrated by this user
+	* List all servers that are managed by this user
 	* @param array $include list of extra data to include in response
 	* @return array of Server objects
 	*/
@@ -135,10 +135,10 @@ class User extends Entity {
 	}
 
 	/**
-	* Determine if this user is an administrator of the specified entity or server.
-	* @param Record $record object to check for administration privileges
-	* @return bool true if user is an administrator of the object
-	* @throws InvalidArgumentException if a non-administratable Record is provided
+	* Determine if this user is a leader of the specified entity or server.
+	* @param Record $record object to check for management privileges
+	* @return bool true if user is a leader of the object
+	* @throws InvalidArgumentException if a non-managable Record is provided
 	*/
 	public function admin_of(Record $record) {
 		switch(get_class($record)) {

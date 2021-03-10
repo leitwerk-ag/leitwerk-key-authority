@@ -76,7 +76,7 @@
 <?php } ?>
 <ul class="nav nav-tabs">
 	<li><a href="#accounts" data-toggle="tab">Accounts</a></li>
-	<li><a href="#admins" data-toggle="tab">Administrators</a></li>
+	<li><a href="#admins" data-toggle="tab">Leaders</a></li>
 	<li><a href="#settings" data-toggle="tab">Settings</a></li>
 	<li><a href="#log" data-toggle="tab">Log</a></li>
 	<?php if($this->get('admin')) { ?>
@@ -195,9 +195,9 @@
 		</form>
 	</div>
 	<div class="tab-pane fade" id="admins">
-		<h2 class="sr-only">Server administrators</h2>
+		<h2 class="sr-only">Server leaders</h2>
 		<?php if(count($this->get('server_admins')) == 0) { ?>
-		<p class="alert alert-danger">This server does not have any administrators assigned.</p>
+		<p class="alert alert-danger">This server does not have any leaders assigned.</p>
 		<?php } else { ?>
 		<form method="post" action="<?php outurl($this->data->relative_request_url)?>">
 			<?php out($this->get('active_user')->get_csrf_field(), ESC_NONE) ?>
@@ -219,7 +219,7 @@
 								<td><?php out($admin->name); if(!$admin->active) out(' <span class="label label-default">Inactive</span>', ESC_NONE) ?></td>
 								<?php if($this->get('admin')) {?>
 								<td>
-									<button type="submit" name="delete_admin" value="<?php out($admin->id) ?>" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-trash"></span> Remove admin</button>
+									<button type="submit" name="delete_admin" value="<?php out($admin->id) ?>" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-trash"></span> Remove leader</button>
 								</td>
 								<?php } ?>
 							</tr>
@@ -229,7 +229,7 @@
 								<td><?php out($admin->name); if(!$admin->active) out(' <span class="label label-default">Inactive</span>', ESC_NONE) ?></td>
 								<?php if($this->get('admin')) { ?>
 								<td>
-									<button type="submit" name="delete_admin" value="<?php out($admin->id) ?>" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-trash"></span> Remove admin</button>
+									<button type="submit" name="delete_admin" value="<?php out($admin->id) ?>" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-trash"></span> Remove leader</button>
 								</td>
 								<?php } ?>
 							</tr>
@@ -241,7 +241,7 @@
 		<?php if($this->get('admin')) { ?>
 		<form method="post" action="<?php outurl($this->data->relative_request_url)?>" class="form-inline">
 			<?php out($this->get('active_user')->get_csrf_field(), ESC_NONE) ?>
-			<h3>Add administrator</h3>
+			<h3>Add leader</h3>
 			<div class="form-group">
 				<label for="user_name" class="sr-only">User or group name</label>
 				<input type="text" id="user_name" name="user_name" class="form-control" placeholder="User or group name" required list="userlist">
@@ -254,7 +254,7 @@
 					<?php } ?>
 				</datalist>
 			</div>
-			<button type="submit" name="add_admin" value="1" class="btn btn-primary">Add administrator to server</button>
+			<button type="submit" name="add_admin" value="1" class="btn btn-primary">Add leader to server</button>
 		</form>
 		<?php } ?>
 	</div>
@@ -493,7 +493,7 @@
 				<div class="radio">
 					<label>
 						<input type="radio" name="recipients" value="admins" checked>
-						Server admins of <?php out($this->get('server')->hostname) ?>
+						Server leaders of <?php out($this->get('server')->hostname) ?>
 					</label>
 				</div>
 				<div class="radio">
@@ -636,11 +636,11 @@
 <?php } elseif($this->get('server')->authorization == 'automatic LDAP') { ?>
 <p>Access to this server is based on LDAP accounts.</p>
 <?php } elseif($this->get('server')->authorization == 'manual LDAP') { ?>
-<p>Access to this server is based on LDAP accounts.  Contact the server administrators to get access.</p>
+<p>Access to this server is based on LDAP accounts.  Contact the server leaders to get access.</p>
 <?php } ?>
 <?php if(count($this->get('admined_accounts')) > 0) { ?>
-<h2>Administrated accounts</h2>
-<p>You are an administrator for the following accounts on this server:</p>
+<h2>Managed accounts</h2>
+<p>You are a leader for the following accounts on this server:</p>
 <table class="table table-bordered table-striped">
 	<thead>
 		<tr>

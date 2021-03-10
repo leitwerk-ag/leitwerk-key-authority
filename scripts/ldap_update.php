@@ -59,7 +59,7 @@ foreach($users as $user) {
 		$user->update_group_memberships();
 		$user->update();
 		if($active && !$user->active) {
-			// Check for servers that will now be admin-less
+			// Check for servers that will now be leader-less
 			$servers = $user->list_admined_servers();
 			foreach($servers as $server) {
 				$server_admins = $server->list_effective_admins();
@@ -76,7 +76,7 @@ foreach($users as $user) {
 					}
 					$email = new Email;
 					$email->subject = "Server {$server->hostname} has been orphaned";
-					$email->body = "{$user->name} ({$user->uid}) was an administrator for {$server->hostname}, but they have now been marked as a former employee and there are no active administrators remaining for this server.\n\n";
+					$email->body = "{$user->name} ({$user->uid}) was a leader for {$server->hostname}, but they have now been marked as a former employee and there are no active leaders remaining for this server.\n\n";
 					$email->body .= "Please find a replacement owner for this server and inform {$config['email']['admin_address']} ASAP, otherwise the server will be registered for decommissioning.";
 					$email->add_reply_to($config['email']['admin_address'], $config['email']['admin_name']);
 					if(!isset($rcpt)) {

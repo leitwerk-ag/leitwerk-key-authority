@@ -151,14 +151,14 @@ class Server extends Record {
 	}
 
 	/**
-	* Add the specified user or group as an administrator of the server.
+	* Add the specified user or group as a leader of the server.
 	* This action is logged with a warning level as it is increasing an access level.
-	* @param Entity $entity user or group to add as administrator
+	* @param Entity $entity user or group to add as leader
 	*/
 	public function add_admin(Entity $entity) {
 		global $config;
-		if(is_null($this->id)) throw new BadMethodCallException('Server must be in directory before admins can be added');
-		if(is_null($entity->entity_id)) throw new InvalidArgumentException('User or group must be in directory before it can be made admin');
+		if(is_null($this->id)) throw new BadMethodCallException('Server must be in directory before leaders can be added');
+		if(is_null($entity->entity_id)) throw new InvalidArgumentException('User or group must be in directory before it can be made leader');
 		$entity_id = $entity->entity_id;
 		try {
 			$url = $config['web']['baseurl'].'/servers/'.urlencode($this->hostname);
@@ -168,7 +168,7 @@ class Server extends Record {
 			switch(get_class($entity)) {
 			case 'User':
 				$email->add_recipient($entity->email, $entity->name);
-				$email->body = "{$this->active_user->name} ({$this->active_user->uid}) has added you as a server administrator for {$this->hostname}.  You can administer access to this server from <$url>";
+				$email->body = "{$this->active_user->name} ({$this->active_user->uid}) has added you as a server leader for {$this->hostname}.  You can manage access to this server from <$url>";
 				$logmsg = array('action' => 'Administrator add', 'value' => "user:{$entity->uid}");
 				break;
 			case 'Group':
@@ -177,11 +177,11 @@ class Server extends Record {
 						$email->add_recipient($member->email, $member->name);
 					}
 				}
-				$email->body = "{$this->active_user->name} ({$this->active_user->uid}) has added the {$entity->name} group as server administrator for {$this->hostname}.  You are a member of the {$entity->name} group, so you can administer access to this server from <$url>";
+				$email->body = "{$this->active_user->name} ({$this->active_user->uid}) has added the {$entity->name} group as server leader for {$this->hostname}.  You are a member of the {$entity->name} group, so you can manage access to this server from <$url>";
 				$logmsg = array('action' => 'Administrator add', 'value' => "group:{$entity->name}");
 				break;
 			default:
-				throw new InvalidArgumentException('Entities of type '.get_class($entity).' cannot be added as server admins');
+				throw new InvalidArgumentException('Entities of type '.get_class($entity).' cannot be added as server leaders');
 			}
 			$stmt = $this->database->prepare("INSERT INTO server_admin SET server_id = ?, entity_id = ?");
 			$stmt->bind_param('dd', $this->id, $entity_id);
@@ -201,14 +201,14 @@ class Server extends Record {
 	}
 
 	/**
-	* Remove the specified user or group as an administrator of the server.
+	* Remove the specified user or group as a leader of the server.
 	* This action is logged with a warning level as it means the removed user/group will no longer
 	* receive notifications for any changes done to this server.
-	* @param Entity $entity user or group to remove as administrator
+	* @param Entity $entity user or group to remove as leader
 	*/
 	public function delete_admin(Entity $entity) {
-		if(is_null($this->id)) throw new BadMethodCallException('Server must be in directory before admins can be deleted');
-		if(is_null($entity->entity_id)) throw new InvalidArgumentException('User or group must be in directory before it can be removed as admin');
+		if(is_null($this->id)) throw new BadMethodCallException('Server must be in directory before leaders can be deleted');
+		if(is_null($entity->entity_id)) throw new InvalidArgumentException('User or group must be in directory before it can be removed as leader');
 		$entity_id = $entity->entity_id;
 		switch(get_class($entity)) {
 		case 'User':
@@ -218,7 +218,7 @@ class Server extends Record {
 			$this->log(array('action' => 'Administrator remove', 'value' => "group:{$entity->name}"), LOG_WARNING);
 			break;
 		default:
-			throw new InvalidArgumentException('Entities of type '.get_class($entity).' should not exist as server admins');
+			throw new InvalidArgumentException('Entities of type '.get_class($entity).' should not exist as server leaders');
 		}
 		$stmt = $this->database->prepare("DELETE FROM server_admin WHERE server_id = ? AND entity_id = ?");
 		$stmt->bind_param('dd', $this->id, $entity_id);
@@ -227,11 +227,11 @@ class Server extends Record {
 	}
 
 	/**
-	* List all administrators of this server.
+	* List all leaders of this server.
 	* @return array of User/Group objects
 	*/
 	public function list_admins() {
-		if(is_null($this->id)) throw new BadMethodCallException('Server must be in directory before admins can be listed');
+		if(is_null($this->id)) throw new BadMethodCallException('Server must be in directory before leaders can be listed');
 		$stmt = $this->database->prepare("SELECT entity_id, type FROM server_admin INNER JOIN entity ON entity.id = server_admin.entity_id WHERE server_id = ?");
 		$stmt->bind_param('d', $this->id);
 		$stmt->execute();
@@ -249,8 +249,8 @@ class Server extends Record {
 	}
 
 	/**
-	* Return the list of all users who can administrate this server, including
-	* via group membership of a group that has been made administrator.
+	* Return the list of all users who can manage this server, including
+	* via group membership of a group that has been made leader.
 	* @return array of User objects
 	*/
 	public function list_effective_admins() {

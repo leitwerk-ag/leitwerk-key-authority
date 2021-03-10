@@ -58,7 +58,7 @@ function prepare_import(string $csv_document, &$error_ref): ?array {
 			}
 		}
 		if ($cells[2] === "") {
-			$errors .= "- Line $line_num contains an empty admin field. Each server needs at least one admin or admin group.\n";
+			$errors .= "- Line $line_num contains an empty leader field. Each server needs at least one leader or leader group.\n";
 			continue;
 		}
 		$admin_names = explode(";", $cells[2]);
@@ -68,7 +68,7 @@ function prepare_import(string $csv_document, &$error_ref): ?array {
 			if ($entity !== null) {
 				$admins[] = $entity;
 			} else {
-				$errors .= "- Admin in line $line_num: \"$name\" could not be found, neither as user nor as group.\n";
+				$errors .= "- Leader in line $line_num: \"$name\" could not be found, neither as user nor as group.\n";
 			}
 		}
 		$entries[] = [
