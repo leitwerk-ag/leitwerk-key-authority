@@ -24,6 +24,18 @@ class LDAP {
 	private $bind_password;
 	private $options;
 
+	private $config;
+	private $config_file = 'config/config.ini';
+
+	private function loadconfigfile() {
+		if(file_exists($this->config_file)) {
+		        $this->config = parse_ini_file($this->config_file, true);
+		} else {
+		        throw new Exception("Config file $this->config_file does not exist.");
+		}
+	}
+
+
 	public function __construct($host, $starttls, $bind_dn, $bind_password, $options) {
 		$this->conn = null;
 		$this->host = $host;
@@ -114,7 +126,7 @@ class LDAP {
 							unset($values['count']);
 							if(count($values) == 1) $values = $values[0];
 						}
-						if (strtolower($key) === 'objectguid') {
+						if (strtolower($key) === strtolower($this->config['ldap']['group_num'])) {
 							$values = self::decode_guid($values);
 						}
 						$itemResult[$key] = $values;

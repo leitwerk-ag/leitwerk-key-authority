@@ -58,7 +58,7 @@ if(isset($_POST['add_group']) && ($active_user->admin)) {
 	$already_existing = [];
 	$not_found = 0;
 	foreach ($group_guids as $group_guid) {
-		$result = $ldap->search($config['ldap']['dn_group'], 'objectguid='.LDAP::query_encode_guid($group_guid), ['cn']);
+		$result = $ldap->search($config['ldap']['dn_group'], LDAP::escape(strtolower($config['ldap']['group_num'])).'='.LDAP::query_encode_guid($group_guid), ['cn']);
 		if (!empty($result)) {
 			try {
 				$group = new Group;
@@ -130,25 +130,25 @@ if(isset($_POST['add_group']) && ($active_user->admin)) {
 			$return_list[] = [
 				"type" => "ou",
 				"name" => $main[0]['name'],
-				"guid" => $main[0]['objectguid'],
+				"guid" => $main[0][strtolower($config['ldap']['group_num'])],
 			];
 		}
 	} else {
-		$ou = $ldap->search($config['ldap']['dn_group'], 'objectguid='.$ldap->query_encode_guid($guid), ['dn']);
+		$ou = $ldap->search($config['ldap']['dn_group'], LDAP::escape(strtolower($config['ldap']['group_num'])).'='.$ldap->query_encode_guid($guid), ['dn']);
 		if (!empty($ou)) {
-			$elements = $ldap->search($ou[0]['dn'], '(objectClass=*)', ['objectclass', 'name', 'objectguid'], [], true);
+			$elements = $ldap->search($ou[0]['dn'], '(objectClass=*)', ['objectclass', 'name', strtolower($config['ldap']['group_num'])], [], true);
 			foreach ($elements as $element) {
 				if (in_array('organizationalUnit', $element['objectclass'])) {
 					$return_list[] = [
 						"type" => "ou",
 						"name" => $element['name'],
-						"guid" => $element['objectguid'],
+						"guid" => $element[strtolower($config['ldap']['group_num'])],
 					];
-				} else if (in_array('group', $element['objectclass'])) {
+				} else if (in_array($config['ldap']['group_class'], $element['objectclass'])) {
 					$return_list[] = [
 						"type" => "group",
 						"name" => $element['name'],
-						"guid" => $element['objectguid'],
+						"guid" => $element[strtolower($config['ldap']['group_num'])],
 					];
 				}
 			}
