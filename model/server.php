@@ -570,6 +570,7 @@ class Server extends Record {
 		$connection = SSH::connect_with_pubkey(
 			$this->hostname,
 			$this->port,
+			$this->parse_jumphosts(),
 			'keys-sync',
 			'config/keys-sync.pub',
 			'config/keys-sync',
@@ -755,6 +756,31 @@ class Server extends Record {
 	public static function jumphosts_valid(string $jumphosts): bool {
 		$one_jumphost_regex = "[^@]+@[a-zA-Z0-9\\-.\x80-\xff]+(:[0-9]+)?";
 		return preg_match("|^($one_jumphost_regex(,$one_jumphost_regex)*)?\$|", $jumphosts);
+	}
+
+	/**
+	 * Parse the jumphosts string of this object and return an array of jumphosts, where
+	 * each element contains "user", "host", "port".
+	 *
+	 * @return array Contains one entry per jumphost. Empty array, if there are no jumphosts.
+	 */
+	public function parse_jumphosts(): array {
+		if ($this->jumphosts == "") {
+			return [];
+		}
+		$parts = explode(",", $this->jumphosts);
+		return array_map(function($part) {
+			preg_match("|^([^@]+)@([a-zA-Z0-9\\-.\x80-\xff]+)(:([0-9]+))?\$|", $part, $matches);
+			$port = $matches[4];
+			if ($port == "") {
+				$port = 22;
+			}
+			return [
+				"user" => $matches[1],
+				"host" => $matches[2],
+				"port" => (int)$port,
+			];
+		}, $parts);
 	}
 }
 

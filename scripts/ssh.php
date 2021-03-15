@@ -32,6 +32,20 @@ class SSH {
 	private $connection;
 
 	/**
+	 * Child command handle.
+	 * Event though this field is never read, it needs to be stored here to keep the child
+	 * process alive.
+	 */
+	private $jump_cmd_child;
+
+	/**
+	 * Only set, if jumphosts are used. This contains the reading end of a pipe to receive
+	 * stderr output of the ssh jumphost command. If the handshake to the target fails,
+	 * this stream could tell the reason.
+	 */
+	private $jump_cmd_stderr;
+
+	/**
 	 * Create a new ssh connection instance using the given handle
 	 * @param resource $connection The opened ssh connection handle
 	 */
@@ -47,6 +61,7 @@ class SSH {
 	 *
 	 * @param string $host Hostname of the ssh server
 	 * @param int $port Port number of the ssh server
+	 * @param array $jumphosts An array of jumphosts where each element contains "user", "host", "port".
 	 * @param string $pubkey_file_path Location of the public key file to use
 	 * @param string $privkey_file_path Location of the private key file to use
 	 * @param string &$host_key Reference to the host key value
@@ -55,18 +70,28 @@ class SSH {
 	public static function connect_with_pubkey(
 		string $host,
 		int $port,
+		array $jumphosts,
 		string $username,
 		string $pubkey_file_path,
 		string $privkey_file_path,
 		?string &$host_key
 	): SSH {
 		try {
-			$ssh = new SFTP($host, $port);
+			$ssh = self::build_connection($host, $port, $jumphosts);
 		} catch(ErrorException $e) {
 			throw new SSHException("Failed to connect to ssh server", null, $e);
 		}
 		$received_key = $ssh->getServerPublicHostKey();
-		if ($host_key === null || $host_key === "") {
+		if ($received_key === false) {
+			$err = "Could not receive host key from target server";
+			if ($ssh->jump_cmd_stderr !== null) {
+				$stderr = stream_get_contents($ssh->jump_cmd_stderr);
+				if ($stderr != "") {
+					$err = "The tunnel connection via one or more jumphosts failed: $stderr";
+				}
+			}
+			throw new SSHException($err);
+		} else if ($host_key === null || $host_key === "") {
 			$host_key = $received_key;
 		} else if ($host_key != $received_key) {
 			throw new SSHException("SSH host key fingerprint does not match");
@@ -76,6 +101,46 @@ class SSH {
 			throw new SSHException("SSH pubkey authentication failed");
 		}
 		return new SSH($ssh);
+	}
+
+	/**
+	 * Create an SFTP instance, connected to the target server, but do not authenticate.
+	 *
+	 * @param string $host Hostname of the target server
+	 * @param int $port Port number of the target server
+	 * @param array $jumphosts List
+	 * @return SFTP The connected SFTP instance
+	 */
+	private static function build_connection(string $host, int $port, array $jumphosts): SFTP {
+		if (empty($jumphosts)) {
+			return new SFTP($host, $port);
+		}
+		$last_jumphost = array_pop($jumphosts);
+		// All but the last jumphost remain in $jumphosts
+		$jump_args = array_map(function($step) {
+			return " -J " . escapeshellarg("{$step['user']}@{$step['host']}:{$step['port']}");
+		}, $jumphosts);
+		$target = escapeshellarg("$host:$port");
+		$last_port = escapeshellarg("{$last_jumphost['port']}");
+		$jump_args_combined = implode("", $jump_args);
+		$last_jump = escapeshellarg("{$last_jumphost['user']}@{$last_jumphost['host']}");
+		$fix_options = "-o StrictHostKeyChecking=off -o UserKnownHostsFile=/dev/null -i config/keys-sync";
+		$conn_cmd = "ssh $fix_options -W $target -p $last_port $jump_args_combined $last_jump";
+
+		$sock_pair = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, 0);
+		$child_stream = $sock_pair[0];
+		$parent_stream = $sock_pair[1];
+		$descriptorspec = array(
+				0 => $child_stream,
+				1 => $child_stream,
+				2 => ["pipe", "w"],
+		);
+		$child = proc_open($conn_cmd, $descriptorspec, $pipes);
+		fclose($child_stream);
+		$sftp = new SFTP($parent_stream);
+		$sftp->jump_cmd_stderr = $pipes[2];
+		$sftp->jump_cmd_child = $child;
+		return $sftp;
 	}
 
 	/**
