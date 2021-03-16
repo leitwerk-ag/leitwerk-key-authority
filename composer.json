@@ -1,0 +1,9 @@
+{
+    "name": "leitwerk-ag/leitwerk-key-authority",
+    "description": "A tool for managing user and server SSH access to any number of servers.",
+    "type": "project",
+    "require": {
+        "phpseclib/phpseclib": "^3.0"
+    },
+    "license": "Apache-2.0"
+}

@@ -55,7 +55,7 @@
 	</ul>
 </div>
 <?php } ?>
-<?php if($this->get('server')->rsa_key_fingerprint && count($this->get('matching_servers_by_host_key')) > 1) { ?>
+<?php if($this->get('server')->host_key && count($this->get('matching_servers_by_host_key')) > 1) { ?>
 <div class="alert alert-danger">
 	<p>The server has the same SSH host key as the following:</p>
 	<ul>
@@ -276,12 +276,18 @@
 				</div>
 			</div>
 			<div class="form-group">
-				<label for="rsa_key_fingerprint" class="col-sm-2 control-label">Host key fingerprint</label>
+				<label for="host_key" class="col-sm-2 control-label">Host key</label>
 				<div class="col-sm-4">
-					<input type="text" id="rsa_key_fingerprint" name="rsa_key_fingerprint" value="<?php out($this->get('server')->rsa_key_fingerprint)?>" readonly class="form-control">
+					<input type="text" id="host_key" name="host_key" value="<?php out($this->get('server')->host_key)?>" readonly class="form-control">
 				</div>
 				<div class="col-sm-6">
-					<button type="button" class="btn btn-default" data-clear="rsa_key_fingerprint">Clear</button>
+					<button type="button" class="btn btn-default" data-clear="host_key">Clear</button>
+				</div>
+			</div>
+			<div class="form-group">
+				<label for="host_key" class="col-sm-2 control-label">Jumphosts (<a href="<?php outurl('/help#jumphost_format')?>">format</a>)</label>
+				<div class="col-sm-10">
+					<input type="text" id="jumphosts" name="jumphosts" value="<?php out($this->get('server')->jumphosts)?>" pattern="[^@]+@[a-zA-Z0-9\-.\u0080-\uffff]+(:[0-9]+)?(,[^@]+@[a-zA-Z0-9\-.\u0080-\uffff]+(:[0-9]+)?)*" class="form-control">
 				</div>
 			</div>
 			<div class="form-group">
@@ -368,6 +374,8 @@
 			<dl>
 				<dt>SSH port number</dt>
 				<dd><?php out($this->get('server')->port)?></dd>
+				<dt>Jumphosts</dt>
+				<dd><?php out($this->get('server')->jumphosts)?></dd>
 				<dt>Key management</dt>
 				<dd>
 					<?php
@@ -410,12 +418,12 @@
 			</dl>
 			<?php if($this->get('server_admin_can_reset_host_key')) { ?>
 			<div class="form-group">
-				<label for="rsa_key_fingerprint" class="col-sm-2 control-label">Host key fingerprint</label>
+				<label for="host_key" class="col-sm-2 control-label">Host key</label>
 				<div class="col-sm-4">
-					<input type="text" id="rsa_key_fingerprint" name="rsa_key_fingerprint" value="<?php out($this->get('server')->rsa_key_fingerprint)?>" readonly class="form-control">
+					<input type="text" id="host_key" name="host_key" value="<?php out($this->get('server')->host_key)?>" readonly class="form-control">
 				</div>
 				<div class="col-sm-6">
-					<button type="button" class="btn btn-default" data-clear="rsa_key_fingerprint">Clear</button>
+					<button type="button" class="btn btn-default" data-clear="host_key">Clear</button>
 				</div>
 			</div>
 			<div class="form-group">

@@ -16,6 +16,21 @@
 ##
 
 /**
+ * Represent the message of an exception (that might consist of multiple, chained
+ * exceptions) as one string.
+ *
+ * @param Exception $e The exception to describe
+ */
+function describe_oneline(Exception $e) {
+	$prev = $e->getPrevious();
+	if ($prev === null) {
+		return $e->getMessage();
+	} else {
+		return $e->getMessage() . ": " . describe_oneline($prev);
+	}
+}
+
+/**
 * Synchronization child process object
 */
 class SyncProcess {

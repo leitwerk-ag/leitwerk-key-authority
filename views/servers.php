@@ -24,7 +24,7 @@
  *
  * @param string $csv_document The content of the csv document to import
  * @param string $error_ref Reference to a variable where error messages are stored
- *  @return array|NULL Prepared information about the hosts, needed for the bulk import or null in case of an error
+ * @return array|NULL Prepared information about the hosts, needed for the bulk import or null in case of an error
  */
 function prepare_import(string $csv_document, &$error_ref): ?array {
 	$errors = "";
@@ -38,8 +38,8 @@ function prepare_import(string $csv_document, &$error_ref): ?array {
 		}
 		$cells = str_getcsv($line, ",", "\"", "");
 		$count = count($cells);
-		if ($count != 3) {
-			$errors .= "- Line $line_num contains $count columns, but expected 3\n";
+		if ($count != 4) {
+			$errors .= "- Line $line_num contains $count columns, but expected 4\n";
 			continue;
 		}
 		$hostname = $cells[0];
@@ -57,11 +57,16 @@ function prepare_import(string $csv_document, &$error_ref): ?array {
 				continue;
 			}
 		}
-		if ($cells[2] === "") {
+		$jumphosts = $cells[2];
+		if (!Server::jumphosts_valid($jumphosts)) {
+			$errors .= "- The jumphost list in line $line_num is invalid.";
+			continue;
+		}
+		if ($cells[3] === "") {
 			$errors .= "- Line $line_num contains an empty leader field. Each server needs at least one leader or leader group.\n";
 			continue;
 		}
-		$admin_names = explode(";", $cells[2]);
+		$admin_names = explode(";", $cells[3]);
 		$admins = [];
 		foreach ($admin_names as $name) {
 			$entity = user_or_group_by_name($name);
@@ -74,6 +79,7 @@ function prepare_import(string $csv_document, &$error_ref): ?array {
 		$entries[] = [
 			"hostname" => $hostname,
 			"port" => $port,
+			"jumphosts" => $jumphosts,
 			"admins" => $admins,
 		];
 	}
@@ -117,6 +123,7 @@ function run_import(array $entries): array {
 		$server = new Server;
 		$server->hostname = $entry['hostname'];
 		$server->port = $entry['port'];
+		$server->jumphosts = $entry['jumphosts'];
 		try {
 			$server_dir->add_server($server);
 			foreach($entry['admins'] as $admin) {
@@ -153,6 +160,7 @@ if(isset($_POST['add_server']) && ($active_user->admin)) {
 			$server = new Server;
 			$server->hostname = $hostname;
 			$server->port = $_POST['port'];
+			$server->jumphosts = $_POST['jumphosts'];
 			try {
 				$server_dir->add_server($server);
 				foreach($admins as $admin) {
@@ -165,6 +173,12 @@ if(isset($_POST['add_server']) && ($active_user->admin)) {
 			} catch(ServerAlreadyExistsException $e) {
 				$alert = new UserAlert;
 				$alert->content = 'Server \'<a href="'.rrurl('/servers/'.urlencode($hostname)).'" class="alert-link">'.hesc($hostname).'</a>\' is already known by Leitwerk Key Authority.';
+				$alert->escaping = ESC_NONE;
+				$alert->class = 'danger';
+				$active_user->add_alert($alert);
+			} catch (InvalidJumphostsException $e) {
+				$alert = new UserAlert;
+				$alert->content = 'The list of jumphosts has an invalid format.';
 				$alert->escaping = ESC_NONE;
 				$alert->class = 'danger';
 				$active_user->add_alert($alert);

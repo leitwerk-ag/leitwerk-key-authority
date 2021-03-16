@@ -57,12 +57,13 @@ class Server extends Record {
 		foreach($changes as $change) {
 			switch($change->field) {
 			case 'hostname':
+			case 'jumphosts':
 			case 'key_management':
 			case 'authorization':
 			case 'custom_keys':
 				$resync = true;
 				break;
-			case 'rsa_key_fingerprint':
+			case 'host_key':
 				if(empty($change->new_value)) $resync = true;
 				break;
 			}
@@ -547,6 +548,74 @@ class Server extends Record {
 	}
 
 	/**
+	 * Open an ssh connection using the adapter class SSH and return the connection instance.
+	 * This function also performs ip address and host key collision checks.
+	 * If turned on in settings, it also does hostname verification.
+	 *
+	 * @return SSH The connection instance
+	 * @throws SSHException If the connection fails for some reason
+	 */
+	public function connect_ssh(): SSH {
+		global $config, $server_dir;
+
+		$this->ip_address = gethostbyname($this->hostname);
+		$this->update();
+
+		// IP address check
+		$matching_servers = $server_dir->list_servers(array(), array('ip_address' => $this->ip_address, 'key_management' => array('keys')));
+		if(count($matching_servers) > 1) {
+			throw new SSHException("Multiple hosts with same IP address");
+		}
+
+		$connection = SSH::connect_with_pubkey(
+			$this->hostname,
+			$this->port,
+			$this->parse_jumphosts(),
+			'keys-sync',
+			'config/keys-sync.pub',
+			'config/keys-sync',
+			$this->host_key
+		);
+		$this->update(); // fingerprint might have changed
+
+		// Check for host key collisions
+		if(!isset($config['security']) || !isset($config['security']['host_key_collision_protection']) || $config['security']['host_key_collision_protection'] == 1) {
+			$matching_servers = $server_dir->list_servers(array(), array('host_key' => $this->host_key, 'key_management' => array('keys')));
+			if(count($matching_servers) > 1) {
+				throw new SSHException("Multiple hosts with same host key.");
+			}
+		}
+
+		// hostname verification
+		if(isset($config['security']) && isset($config['security']['hostname_verification']) && $config['security']['hostname_verification'] >= 1) {
+			// Verify that we have mutual agreement with the server that we sync to it with this hostname
+			$allowed_hostnames = null;
+			if($config['security']['hostname_verification'] >= 2) {
+				// 2+ = Compare with /var/local/keys-sync/.hostnames
+				try {
+					$allowed_hostnames = array_map('trim', $connection->file_get_lines("/var/local/keys-sync/.hostnames"));
+				} catch(SSHException $e) {
+					if($config['security']['hostname_verification'] >= 3) {
+						// 3+ = Abort if file does not exist
+						throw new SSHException("Could not read /var/local/keys-sync/.hostnames", null, $e);
+					} else {
+						$allowed_hostnames = null;
+					}
+				}
+			}
+			if(is_null($allowed_hostnames)) {
+				$output = $connection->exec('/bin/hostname -f');
+				$allowed_hostnames = array(trim($output));
+			}
+			if(!in_array($hostname, $allowed_hostnames)) {
+				throw new SSHException("Hostname check failed (allowed: ".implode(", ", $allowed_hostnames).").");
+			}
+		}
+
+		return $connection;
+	}
+
+	/**
 	* Trigger a sync for all accounts on this server.
 	*/
 	public function sync_access() {
@@ -605,9 +674,9 @@ class Server extends Record {
 	 * Places status information in the file given by $config['monitoring']['status_file_path'] on this server.
 	 * The current sync status and the result of external key supervision are included in this file.
 	 *
-	 * @param handle $sftp The sftp connection to this server
+	 * @param SSH $connection The ssh connection instance to this server
 	 */
-	public function update_status_file($sftp) {
+	public function update_status_file(SSH $connection) {
 		global $config;
 		$timeout = (int)($config['monitoring']['status_file_timeout'] ?? 7200);
 		$expire = date('r', time() + $timeout);
@@ -638,8 +707,8 @@ class Server extends Record {
 		$file_content = json_encode($status_content);
 		$filename = $config['monitoring']['status_file_path'] ?? '/var/local/keys-sync.status';
 		try {
-			file_put_contents("ssh2.sftp://{$sftp}{$filename}", $file_content);
-		} catch (Exception $e) {
+			$connection->file_put_contents($filename, $file_content);
+		} catch (SSHException $e) {
 			$this->key_supervision_error .= "Could not save status info in {$filename}: {$e->getMessage()}\n";
 			$this->update();
 		}
@@ -676,6 +745,42 @@ class Server extends Record {
 			$unnoticed[] = new ExternalKeyOccurrence($row['id'], $attributes);
 		}
 		return $unnoticed;
+	}
+
+	/**
+	 * Check if a given jumphosts string is syntactically correct.
+	 *
+	 * @param string $jumphosts The string naming all jumphosts
+	 * @return bool True if the string looks correct, false if not
+	 */
+	public static function jumphosts_valid(string $jumphosts): bool {
+		$one_jumphost_regex = "[^@]+@[a-zA-Z0-9\\-.\x80-\xff]+(:[0-9]+)?";
+		return preg_match("|^($one_jumphost_regex(,$one_jumphost_regex)*)?\$|", $jumphosts);
+	}
+
+	/**
+	 * Parse the jumphosts string of this object and return an array of jumphosts, where
+	 * each element contains "user", "host", "port".
+	 *
+	 * @return array Contains one entry per jumphost. Empty array, if there are no jumphosts.
+	 */
+	public function parse_jumphosts(): array {
+		if ($this->jumphosts == "") {
+			return [];
+		}
+		$parts = explode(",", $this->jumphosts);
+		return array_map(function($part) {
+			preg_match("|^([^@]+)@([a-zA-Z0-9\\-.\x80-\xff]+)(:([0-9]+))?\$|", $part, $matches);
+			$port = $matches[4] ?? "22";
+			if ($port == "") {
+				$port = 22;
+			}
+			return [
+				"user" => $matches[1],
+				"host" => $matches[2],
+				"port" => (int)$port,
+			];
+		}, $parts);
 	}
 }
 

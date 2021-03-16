@@ -60,6 +60,8 @@ function autoload_model($classname) {
 		throw new InvalidArgumentException("Attempted to load a class $classname that did not exist.");
 	}
 }
+// Autoload composer libraries
+require __DIR__ . '/vendor/autoload.php';
 
 // Setup database connection and models
 function setup_database() {
