@@ -94,7 +94,7 @@ class SSH {
 		} else if ($host_key === null || $host_key === "") {
 			$host_key = $received_key;
 		} else if ($host_key != $received_key) {
-			throw new SSHException("SSH host key fingerprint does not match");
+			throw new SSHException("SSH host key does not match");
 		}
 		$key = PublicKeyLoader::load(file_get_contents("config/keys-sync"));
 		if (!$ssh->login($username, $key)) {
