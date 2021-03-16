@@ -36,10 +36,10 @@ try {
 // Add guid of main admin group, if not already stored
 if ($sysgrp->ldap_guid === null) {
 	$sysgrp_ldap = $ldap->search($config['ldap']['dn_group'],
-			LDAP::escape($config['ldap']['user_id']).'='.LDAP::escape($sysgrp->name),
-			['objectguid']);
+			LDAP::escape($config['ldap']['group_id']).'='.LDAP::escape($sysgrp->name),
+			[strtolower($config['ldap']['group_num'])]);
 	if (!empty($sysgrp_ldap)) {
-		$sysgrp->ldap_guid = $sysgrp_ldap[0]['objectguid'];
+		$sysgrp->ldap_guid = $sysgrp_ldap[0][strtolower($config['ldap']['group_num'])];
 		$sysgrp->update();
 	}
 }
@@ -93,3 +93,4 @@ foreach($users as $user) {
 		}
 	}
 }
+

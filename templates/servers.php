@@ -182,6 +182,10 @@
 				<input type="number" id="port" name="port" class="form-control" value="22" required>
 			</div>
 			<div class="form-group">
+				<label for="jumphosts">Jumphosts (<a href="<?php outurl('/help#jumphost_format')?>">format</a>)</label>
+				<input type="text" id="jumphosts" name="jumphosts" pattern="[^@]+@[a-zA-Z0-9\-.\u0080-\uffff]+(:[0-9]+)?(,[^@]+@[a-zA-Z0-9\-.\u0080-\uffff]+(:[0-9]+)?)*" class="form-control">
+			</div>
+			<div class="form-group">
 				<label for="server_admin">Leaders</label>
 				<input type="text" id="server_admins" name="admins" class="form-control hidden" required>
 				<input type="text" id="server_admin" name="admin" class="form-control" placeholder="Type user/group name and press 'Enter' key" list="adminlist">
@@ -207,13 +211,14 @@
 		<p>Columns:</p>
 		<ol>
 			<li>The dns name of the server</li>
-			<li>The port number</li>
+			<li>The port number (optional, if empty 22 is assumed)</li>
+			<li>A list of jumphosts (optional, may be empty) see <a href="<?php outurl('/help#jumphost_format')?>">format specification</a></li>
 			<li>A semicolon-separated list of leader login names and leader group names. At least one leader or leader group is needed per server.</li>
 		</ol>
 		<h4>Example</h4>
-		<pre>host1.example.com,22,leader1
-host2.example.com,2222,leader1;ld_group4
-host3.example.com,22,ld_group4;leader2</pre>
+		<pre>host1.example.com,,"root@j1.example.com:7022,keys-sync@j2.example.com",leader1
+host2.example.com,2222,,leader1;ld_group4
+host3.example.com,22,,ld_group4;leader2</pre>
 		<form method="post" action="<?php outurl($this->data->relative_request_url)?>">
 			<?php out($this->get('active_user')->get_csrf_field(), ESC_NONE) ?>
 			<div class="form-group">

@@ -25,7 +25,9 @@ require('pagesection.php');
 
 $config_file = 'config/config.ini';
 if(file_exists($config_file)) {
-	$config = parse_ini_file($config_file, true);
+	$config_sample = parse_ini_file('config/config-sample.ini', true);
+	$config_custom = parse_ini_file($config_file, true);
+	$config = array_replace_recursive($config_sample, $config_custom);
 } else {
 	throw new Exception("Config file $config_file does not exist.");
 }
@@ -60,6 +62,8 @@ function autoload_model($classname) {
 		throw new InvalidArgumentException("Attempted to load a class $classname that did not exist.");
 	}
 }
+// Autoload composer libraries
+require __DIR__ . '/vendor/autoload.php';
 
 // Setup database connection and models
 function setup_database() {

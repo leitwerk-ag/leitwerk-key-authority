@@ -1,6 +1,6 @@
 <?php
 ##
-## Copyright 2013-2017 Opera Software AS
+## Copyright 2021 Leitwerk AG
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -15,5 +15,7 @@
 ## limitations under the License.
 ##
 ?>
-<h1>Unable to fulfill request</h1>
-<p>Your request cannot be fulfilled because you are not a leader of the target entity.</p>
+<h1>Invalid jumphost list</h1>
+<div class="alert alert-danger">
+<p>The list of jumphosts "<?php out($this->get('jumphosts')) ?>" is syntactically incorrect. Please <a href="" class="navigate-back">go back</a> and try again.</p>
+</div>

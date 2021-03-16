@@ -1,6 +1,7 @@
 <?php
 ##
 ## Copyright 2013-2017 Opera Software AS
+## Modifications Copyright 2021 Leitwerk AG
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -89,9 +90,13 @@ if(isset($_POST['sync']) && ($server_admin || $active_user->admin)) {
 	redirect('#accounts');
 } elseif(isset($_POST['edit_server']) && $active_user->admin) {
 	$hostname = trim($_POST['hostname']);
-	if(!preg_match('|.*\..*\..*|', $hostname)) {
+	$jumphosts = trim($_POST['jumphosts']);
+	if(!Server::hostname_valid($hostname)) {
 		$content = new PageSection('invalid_hostname');
 		$content->set('hostname', $hostname);
+	} else if (!Server::jumphosts_valid($jumphosts)) {
+		$content = new PageSection('invalid_jumphosts');
+		$content->set('jumphosts', $jumphosts);
 	} else {
 		$options = array();
 		if(isset($_POST['access_option'])) {
@@ -111,7 +116,8 @@ if(isset($_POST['sync']) && ($server_admin || $active_user->admin)) {
 		$server->update_ldap_access_options($options);
 		$server->hostname = $hostname;
 		$server->port = $_POST['port'];
-		if($_POST['rsa_key_fingerprint'] == '') $server->rsa_key_fingerprint = null;
+		if($_POST['host_key'] == '') $server->host_key = null;
+		$server->jumphosts = $jumphosts;
 		$server->key_management = $_POST['key_management'];
 		$server->authorization = $_POST['authorization'];
 		try {
@@ -126,7 +132,7 @@ if(isset($_POST['sync']) && ($server_admin || $active_user->admin)) {
 		}
 	}
 } elseif(isset($_POST['edit_server']) && $server_admin && $server_admin_can_reset_host_key) {
-	if($_POST['rsa_key_fingerprint'] == '') $server->rsa_key_fingerprint = null;
+	if($_POST['host_key'] == '') $server->host_key = null;
 	$server->update();
 	redirect('#settings');
 } elseif(isset($_POST['request_access'])) {
@@ -291,15 +297,20 @@ if(isset($_POST['sync']) && ($server_admin || $active_user->admin)) {
 		$content->set('all_users', $all_users);
 		$content->set('last_sync', $server->get_last_sync_event());
 		$content->set('sync_requests', $server->list_sync_requests());
-		$content->set('matching_servers_by_ip', $server_dir->list_servers(
-			array(),
-			array(
-				'ip_address' => $server->ip_address,
-				'port' => $server->port,
-				'key_management' => array('keys'),
-			)
-		));
-		$content->set('matching_servers_by_host_key', $server_dir->list_servers(array(), array('rsa_key_fingerprint' => $server->rsa_key_fingerprint, 'key_management' => array('keys'))));
+		$same_ip = [];
+		if ($server->ip_address != "") {
+			$same_ip = $server_dir->list_servers(
+				array(),
+				array(
+					'ip_address' => $server->ip_address,
+					'port' => $server->port,
+					'key_management' => array('keys'),
+					'jumphosts' => $server->jumphosts,
+				)
+			);
+		}
+		$content->set('matching_servers_by_ip', $same_ip);
+		$content->set('matching_servers_by_host_key', $server_dir->list_servers(array(), array('host_key' => $server->host_key, 'key_management' => array('keys'))));
 		$content->set('all_groups', $all_groups);
 		$content->set('all_servers', $all_servers);
 		$content->set('all_accounts', $all_accounts);
