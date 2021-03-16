@@ -25,11 +25,12 @@ Requirements
 * An LDAP directory service
 * Apache 2.2 or higher
 * PHP 5.6 or higher
+* Composer
 * PHP JSON extension
 * PHP LDAP extension
 * PHP mbstring (Multibyte String) extension
 * PHP MySQL extension
-* PHP ssh2 extension
+* PHP GMP extension (not strictly needed, but a big performance improvement)
 * MySQL (5.5+), Percona Server (5.5+) or MariaDB database
 
 Installation
@@ -37,28 +38,32 @@ Installation
 
 1.  Clone the repo somewhere outside of your default Apache document root.
 
-2.  Add the following directives to your Apache configuration (eg. virtual host config):
+2.  Install the dependencies via composer:
+
+        composer install
+
+3.  Add the following directives to your Apache configuration (eg. virtual host config):
 
         DocumentRoot /path/to/lka/public_html
         DirectoryIndex init.php
         FallbackResource /init.php
 
-3.  Create a MySQL user and database (run in MySQL shell):
+4.  Create a MySQL user and database (run in MySQL shell):
 
         CREATE USER 'lka-user'@'localhost' IDENTIFIED BY 'password';
         CREATE DATABASE `lka-db` DEFAULT CHARACTER SET utf8mb4;
         GRANT ALL ON `lka-db`.* to 'lka-user'@'localhost';
 
-4.  Copy the file `config/config-sample.ini` to `config/config.ini` and edit the settings as required.
+5.  Copy the file `config/config-sample.ini` to `config/config.ini` and edit the settings as required.
 
-5.  Set up authnz_ldap for your virtual host (or any other authentication module that will pass on an Auth-user
+6.  Set up authnz_ldap for your virtual host (or any other authentication module that will pass on an Auth-user
     variable to the application).
 
-6.  Set `scripts/ldap_update.php` to run on a regular cron job.
+7.  Set `scripts/ldap_update.php` to run on a regular cron job.
 
-7.  Generate an SSH key pair to synchronize with. Leitwerk Key Authority will expect to find the files as `config/keys-sync` and `config/keys-sync.pub` for the private and public keys respectively.
+8.  Generate an SSH key pair to synchronize with. Leitwerk Key Authority will expect to find the files as `config/keys-sync` and `config/keys-sync.pub` for the private and public keys respectively.
 
-8.  Install the SSH key synchronization daemon. For systemd:
+9.  Install the SSH key synchronization daemon. For systemd:
 
     1.  Copy `services/systemd/keys-sync.service` to `/etc/systemd/system/`
     2.  Modify `ExecStart` path and `User` as necessary. If Leitwerk Key Authority is installed under `/home`, disable `ProtectHome`.
