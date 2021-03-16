@@ -43,9 +43,6 @@ foreach ($servers as $server) {
 		if ($error_string == "") {
 			// Empty error set is stored as null in database
 			$error_string = null;
-		} else {
-			// Prepend start time to non-empty error sets
-			$error_string = $start_time . "\n" . $error_string;
 		}
 	} catch (Exception $e) {
 		$error_string .= "Exception while reading keys of {$server->hostname}:\n  " . $e->getMessage() . "\n";
