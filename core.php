@@ -25,7 +25,9 @@ require('pagesection.php');
 
 $config_file = 'config/config.ini';
 if(file_exists($config_file)) {
-	$config = parse_ini_file($config_file, true);
+	$config_sample = parse_ini_file('config/config-sample.ini', true);
+	$config_custom = parse_ini_file($config_file, true);
+	$config = array_replace_recursive($config_sample, $config_custom);
 } else {
 	throw new Exception("Config file $config_file does not exist.");
 }
