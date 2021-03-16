@@ -771,7 +771,7 @@ class Server extends Record {
 		$parts = explode(",", $this->jumphosts);
 		return array_map(function($part) {
 			preg_match("|^([^@]+)@([a-zA-Z0-9\\-.\x80-\xff]+)(:([0-9]+))?\$|", $part, $matches);
-			$port = $matches[4];
+			$port = $matches[4] ?? "22";
 			if ($port == "") {
 				$port = 22;
 			}

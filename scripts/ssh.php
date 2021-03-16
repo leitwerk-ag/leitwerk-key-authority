@@ -78,7 +78,7 @@ class SSH {
 	): SSH {
 		try {
 			$ssh = self::build_connection($host, $port, $jumphosts);
-		} catch(ErrorException $e) {
+		} catch(SSHException $e) {
 			throw new SSHException("Failed to connect to ssh server", null, $e);
 		}
 		$received_key = $ssh->getServerPublicHostKey();
@@ -108,24 +108,30 @@ class SSH {
 	 *
 	 * @param string $host Hostname of the target server
 	 * @param int $port Port number of the target server
-	 * @param array $jumphosts List
+	 * @param array $jumphosts An array of jumphosts where each element contains "user", "host", "port".
 	 * @return SFTP The connected SFTP instance
 	 */
 	private static function build_connection(string $host, int $port, array $jumphosts): SFTP {
 		if (empty($jumphosts)) {
 			return new SFTP($host, $port);
 		}
-		$last_jumphost = array_pop($jumphosts);
-		// All but the last jumphost remain in $jumphosts
-		$jump_args = array_map(function($step) {
-			return " -J " . escapeshellarg("{$step['user']}@{$step['host']}:{$step['port']}");
-		}, $jumphosts);
-		$target = escapeshellarg("$host:$port");
-		$last_port = escapeshellarg("{$last_jumphost['port']}");
-		$jump_args_combined = implode("", $jump_args);
-		$last_jump = escapeshellarg("{$last_jumphost['user']}@{$last_jumphost['host']}");
 		$fix_options = "-o StrictHostKeyChecking=off -o UserKnownHostsFile=/dev/null -i config/keys-sync";
-		$conn_cmd = "ssh $fix_options -W $target -p $last_port $jump_args_combined $last_jump";
+		$jumphosts[] = [
+			"user" => "keys-sync",
+			"host" => $host,
+			"port" => $port,
+		];
+
+		for ($i = 0; $i < (count($jumphosts) - 1); $i++) {
+			$target = escapeshellarg("{$jumphosts[$i+1]["host"]}:{$jumphosts[$i+1]["port"]}");
+			$port = escapeshellarg($jumphosts[$i]["port"]);
+			$host_desc = escapeshellarg("{$jumphosts[$i]["user"]}@{$jumphosts[$i]["host"]}");
+			$proxy_command = "";
+			if ($i > 0) {
+				$proxy_command = " -o ProxyCommand=" . escapeshellarg($conn_cmd);
+			}
+			$conn_cmd = "ssh $fix_options$proxy_command -W $target -p $port $host_desc";
+		}
 
 		$sock_pair = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, 0);
 		$child_stream = $sock_pair[0];
