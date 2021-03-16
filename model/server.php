@@ -562,7 +562,7 @@ class Server extends Record {
 		$this->update();
 
 		// IP address check
-		$matching_servers = $server_dir->list_servers(array(), array('ip_address' => $this->ip_address, 'key_management' => array('keys')));
+		$matching_servers = $server_dir->list_servers(array(), array('ip_address' => $this->ip_address, 'key_management' => array('keys'), 'jumphosts' => $this->jumphosts));
 		if(count($matching_servers) > 1) {
 			throw new SSHException("Multiple hosts with same IP address");
 		}
@@ -579,7 +579,7 @@ class Server extends Record {
 		$this->update(); // fingerprint might have changed
 
 		// Check for host key collisions
-		if(!isset($config['security']) || !isset($config['security']['host_key_collision_protection']) || $config['security']['host_key_collision_protection'] == 1) {
+		if($this->host_key != "" && (!isset($config['security']) || !isset($config['security']['host_key_collision_protection']) || $config['security']['host_key_collision_protection'] == 1)) {
 			$matching_servers = $server_dir->list_servers(array(), array('host_key' => $this->host_key, 'key_management' => array('keys')));
 			if(count($matching_servers) > 1) {
 				throw new SSHException("Multiple hosts with same host key.");

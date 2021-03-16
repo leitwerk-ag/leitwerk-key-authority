@@ -221,8 +221,8 @@ if(isset($_POST['add_server']) && ($active_user->admin)) {
 	$defaults = array();
 	$defaults['key_management'] = array('keys');
 	$defaults['sync_status'] = array('sync success', 'sync warning', 'sync failure', 'not synced yet');
-	$defaults['hostname'] = '';
-	$defaults['ip_address'] = '';
+	$defaults['hostname'] = null;
+	$defaults['ip_address'] = null;
 	$filter = simplify_search($defaults, $_GET);
 	try {
 		$servers = $server_dir->list_servers(array('pending_requests', 'admins'), $filter);

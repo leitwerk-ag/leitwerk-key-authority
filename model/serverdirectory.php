@@ -124,13 +124,14 @@ class ServerDirectory extends DBDirectory {
 		$joins = array();
 		$where = array('!server.deleted');
 		foreach($filter as $field => $value) {
-			if($value) {
+			if ($value !== null) {
 				switch($field) {
 				case 'hostname':
 					$where[] = "hostname REGEXP '".$this->database->escape_string($value)."'";
 					break;
 				case 'ip_address':
 				case 'host_key':
+				case 'jumphosts':
 				case 'port':
 					$where[] = "server.$field = '".$this->database->escape_string($value)."'";
 					break;
