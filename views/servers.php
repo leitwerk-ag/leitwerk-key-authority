@@ -43,6 +43,10 @@ function prepare_import(string $csv_document, &$error_ref): ?array {
 			continue;
 		}
 		$hostname = $cells[0];
+		if (!Server::hostname_valid($hostname)) {
+			$errors .= "- Line $line_num contains an invalid hostname: $hostname\n";
+			continue;
+		}
 		$port_str = $cells[1];
 		if ($port_str == "") {
 			$port = 22;
@@ -142,7 +146,7 @@ function run_import(array $entries): array {
 
 if(isset($_POST['add_server']) && ($active_user->admin)) {
 	$hostname = trim($_POST['hostname']);
-	if(!preg_match('|.*\..*\..*|', $hostname)) {
+	if(!Server::hostname_valid($hostname)) {
 		$content = new PageSection('invalid_hostname');
 		$content->set('hostname', $hostname);
 	} else {

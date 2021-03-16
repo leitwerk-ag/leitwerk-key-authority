@@ -748,6 +748,16 @@ class Server extends Record {
 	}
 
 	/**
+	 * Check if a given hostname string is syntactically correct.
+	 *
+	 * @param string $hostname The hostname to check
+	 * @return bool True if the hostname looks correct, false if not
+	 */
+	public static function hostname_valid(string $hostname): bool {
+		return preg_match("|^[a-zA-Z0-9\\-.\x80-\xff]+\$|", $hostname);
+	}
+
+	/**
 	 * Check if a given jumphosts string is syntactically correct.
 	 *
 	 * @param string $jumphosts The string naming all jumphosts
