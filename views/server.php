@@ -91,7 +91,7 @@ if(isset($_POST['sync']) && ($server_admin || $active_user->admin)) {
 } elseif(isset($_POST['edit_server']) && $active_user->admin) {
 	$hostname = trim($_POST['hostname']);
 	$jumphosts = trim($_POST['jumphosts']);
-	if(!preg_match('|.*\..*\..*|', $hostname)) {
+	if(!Server::hostname_valid($hostname)) {
 		$content = new PageSection('invalid_hostname');
 		$content->set('hostname', $hostname);
 	} else if (!Server::jumphosts_valid($jumphosts)) {
