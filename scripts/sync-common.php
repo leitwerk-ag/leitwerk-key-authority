@@ -1,6 +1,7 @@
 <?php
 ##
 ## Copyright 2013-2017 Opera Software AS
+## Modifications Copyright 2021 Leitwerk AG
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -31,14 +32,43 @@ function describe_oneline(Exception $e) {
 }
 
 /**
+ * Read the content from multiple streams in parallel until each stream reached eof.
+ *
+ * @param array $streams An array of streams to read from.
+ * @return array An array of strings (output read from the streams)
+ */
+function read_streams(array $streams): array {
+	$output = [];
+	foreach ($streams as $stream) {
+		$output[] = "";
+		stream_set_blocking($stream, false);
+	}
+	while (!empty($streams)) {
+		$sel_streams = $streams;
+		$wr_streams = null;
+		$err_streams = null;
+		stream_select($sel_streams, $wr_streams, $err_streams, null);
+		foreach ($sel_streams as $i => $stream) {
+			$output[$i] .= fread($stream, 4096);
+			if (feof($stream)) {
+				unset($streams[$i]);
+			}
+		}
+	}
+	return $output;
+}
+
+/**
 * Synchronization child process object
 */
 class SyncProcess {
 	private $handle;
 	private $pipes;
+	private $finished = false;
 	private $output;
 	private $errors;
 	private $request;
+	private $exit_status;
 
 	/**
 	* Create a new sync process
@@ -77,29 +107,39 @@ class SyncProcess {
 	*/
 	public function get_data() {
 		if(isset($this->handle) && is_resource($this->handle)) {
-			$out = fread($this->pipes[1], 4096);
-			$this->output .= $out;
-			$this->errors .= fread($this->pipes[2], 4096);
-			if(feof($this->pipes[1]) && feof($this->pipes[2])) {
-				foreach($this->pipes as $ref => $pipe) {
-					fclose($this->pipes[$ref]);
-				}
-				unset($this->handle);
-				if($this->errors) {
-					echo $this->errors;
-					$this->output = '';
-				}
-				return array('done' => true, 'output' => $this->output);
+			if (!$this->finished) {
+				$data = read_streams([$this->pipes[1], $this->pipes[2]]);
+				$this->output = $data[0];
+				$this->errors = $data[1];
+				$this->finished = true;
 			}
+			foreach($this->pipes as $ref => $pipe) {
+				fclose($this->pipes[$ref]);
+			}
+			$this->exit_status = proc_close($this->handle);
+			unset($this->handle);
+			if($this->errors) {
+				echo $this->errors;
+				$this->output = '';
+			}
+			return array('done' => true, 'output' => $this->output);
 		}
 	}
 
 	/**
-	* Delete the request that triggered this sync
-	*/
-	public function __destruct() {
-		global $sync_request_dir;
+	 * Check the exit status of the client process.
+	 * If the process exited unsuccessfully, set the sync status to failure.
+	 * In any case, delete the sync request.
+	 */
+	public function finish() {
+		global $server_dir, $sync_request_dir;
 		if(!is_null($this->request)) {
+			$this->get_data();
+			if ($this->exit_status !== 0) {
+				$server = $server_dir->get_server_by_id($this->request->server_id);
+				$server->sync_report('sync failure', "Internal error during sync");
+				$server->update();
+			}
 			$sync_request_dir->delete_sync_request($this->request);
 		}
 	}

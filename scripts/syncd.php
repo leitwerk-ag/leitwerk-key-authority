@@ -2,6 +2,7 @@
 <?php
 ##
 ## Copyright 2013-2017 Opera Software AS
+## Modifications Copyright 2021 Leitwerk AG
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -119,6 +120,7 @@ dlog("Daemon started");
 
 $sync_procs = array();
 define('MAX_PROCS', 20);
+$active_user = User::get_keys_sync_user();
 
 // Primary loop
 while(is_null($signal)) {
@@ -155,6 +157,7 @@ while(is_null($signal)) {
 	}
 	foreach($sync_procs as $ref => &$sync_proc) {
 		$data = $sync_proc->get_data();
+		$sync_proc->finish();
 		if(!empty($data)) {
 			dlog($data['output']);
 			unset($sync_proc);
