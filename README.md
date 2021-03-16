@@ -59,9 +59,11 @@ Installation
 6.  Set up authnz_ldap for your virtual host (or any other authentication module that will pass on an Auth-user
     variable to the application).
 
-7.  Set `scripts/ldap_update.php` to run on a regular cron job.
+7.  Set `scripts/ldap_update.php` and `scripts/supervise_external_keys.php` to run on a regular cron job.
 
-8.  Generate an SSH key pair to synchronize with. Leitwerk Key Authority will expect to find the files as `config/keys-sync` and `config/keys-sync.pub` for the private and public keys respectively.
+8.  Generate an SSH key pair to synchronize with. Leitwerk Key Authority will expect to find the files as `config/keys-sync` and `config/keys-sync.pub` for the private and public keys respectively. Be careful to use PEM format.
+
+    ssh-keygen -b 4096 -m pem -f config/keys-sync
 
 9.  Install the SSH key synchronization daemon. For systemd:
 
