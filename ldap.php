@@ -99,6 +99,8 @@ class LDAP {
 	}
 
 	public function search($basedn, $filter, $fields = array(), $sort = array(), $onelevel = false) {
+		global $config;
+
 		if(is_null($this->conn)) $this->connect();
 		if(empty($fields)) {
 			$fields = ["*"];
@@ -126,7 +128,7 @@ class LDAP {
 							unset($values['count']);
 							if(count($values) == 1) $values = $values[0];
 						}
-						if (strtolower($key) === strtolower($this->config['ldap']['group_num'])) {
+						if (strtolower($key) === strtolower($config['ldap']['group_num'])) {
 							$values = self::decode_guid($values);
 						}
 						$itemResult[$key] = $values;

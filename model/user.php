@@ -331,7 +331,11 @@ class User extends Entity {
 			}
 			$this->admin = 0;
 			$group_member = $ldapuser[strtolower($config['ldap']['group_member_value'])];
-			$ldapgroups = $this->ldap->search($config['ldap']['dn_group'], LDAP::escape($config['ldap']['group_member']).'='.LDAP::escape($group_member), array('cn', strtolower($config['ldap']['group_num'])));
+			$indirect_option = "";
+			if ($config['ldap']['indirect_group_memberships']) {
+				$indirect_option = ":1.2.840.113556.1.4.1941:";
+			}
+			$ldapgroups = $this->ldap->search($config['ldap']['dn_group'], LDAP::escape($config['ldap']['group_member'])."$indirect_option=".LDAP::escape($group_member), array('cn', strtolower($config['ldap']['group_num'])));
 			$ldap_group_guids = [];
 			foreach($ldapgroups as $ldapgroup) {
 				$ldap_group_guids[] = $ldapgroup[strtolower($config['ldap']['group_num'])];
