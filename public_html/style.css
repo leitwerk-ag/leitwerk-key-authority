@@ -193,13 +193,8 @@ td.date {
 	width: 11em;
 }
 
-/* Now with 100% more pink! */
-div.navbar-default {
-	background-color: #fff1f9;
-	border-color: #f7e7f6;
-}
-.navbar-default .navbar-nav>.active>a, .navbar-default .navbar-nav>.active>a:focus, .navbar-default .navbar-nav>.active>a:hover {
-	background-color: #f7e7e7;
+.navbar-nav>.active>a, .navbar-nav>.active>a:focus {
+	color: #e30613;
 }
 a {
 	color: #003c68;
