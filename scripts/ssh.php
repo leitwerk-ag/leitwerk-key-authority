@@ -78,10 +78,10 @@ class SSH {
 	): SSH {
 		try {
 			$ssh = self::build_connection($host, $port, $jumphosts);
-		} catch(SSHException $e) {
+			$received_key = $ssh->getServerPublicHostKey();
+		} catch(SSHException | ErrorException $e) {
 			throw new SSHException("Failed to connect to ssh server", null, $e);
 		}
-		$received_key = $ssh->getServerPublicHostKey();
 		if ($received_key === false) {
 			$err = "Could not receive host key from target server";
 			if ($ssh->jump_cmd_stderr !== null) {
