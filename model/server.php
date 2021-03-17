@@ -562,7 +562,12 @@ class Server extends Record {
 		$this->update();
 
 		// IP address check
-		$matching_servers = $server_dir->list_servers(array(), array('ip_address' => $this->ip_address, 'key_management' => array('keys'), 'jumphosts' => $this->jumphosts));
+		$matching_servers = $server_dir->list_servers(array(), array(
+			'ip_address' => $this->ip_address,
+			'port' => $this->port,
+			'key_management' => array('keys'),
+			'jumphosts' => $this->jumphosts)
+		);
 		if(count($matching_servers) > 1) {
 			throw new SSHException("Multiple hosts with same IP address");
 		}
