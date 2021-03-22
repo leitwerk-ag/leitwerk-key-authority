@@ -78,7 +78,7 @@ class SSH {
 	): SSH {
 		try {
 			$ssh = self::build_connection($host, $port, $jumphosts);
-			$received_key = $ssh->getServerPublicHostKey();
+			$received_key = $ssh->connection->getServerPublicHostKey();
 		} catch(SSHException | ErrorException $e) {
 			throw new SSHException("SSH connection failed");
 		}
@@ -97,10 +97,10 @@ class SSH {
 			throw new SSHException("SSH host key verification failed");
 		}
 		$key = PublicKeyLoader::load(file_get_contents("config/keys-sync"));
-		if (!$ssh->login($username, $key)) {
+		if (!$ssh->connection->login($username, $key)) {
 			throw new SSHException("SSH authentication failed");
 		}
-		return new SSH($ssh);
+		return $ssh;
 	}
 
 	/**
@@ -111,9 +111,9 @@ class SSH {
 	 * @param array $jumphosts An array of jumphosts where each element contains "user", "host", "port".
 	 * @return SFTP The connected SFTP instance
 	 */
-	private static function build_connection(string $host, int $port, array $jumphosts): SFTP {
+	private static function build_connection(string $host, int $port, array $jumphosts): SSH {
 		if (empty($jumphosts)) {
-			return new SFTP($host, $port);
+			return new SSH(new SFTP($host, $port));
 		}
 		$fix_options = "-o StrictHostKeyChecking=off -o UserKnownHostsFile=/dev/null -i config/keys-sync";
 		$jumphosts[] = [
@@ -143,10 +143,10 @@ class SSH {
 		);
 		$child = proc_open($conn_cmd, $descriptorspec, $pipes);
 		fclose($child_stream);
-		$sftp = new SFTP($parent_stream);
-		$sftp->jump_cmd_stderr = $pipes[2];
-		$sftp->jump_cmd_child = $child;
-		return $sftp;
+		$ssh = new SSH(new SFTP($parent_stream));
+		$ssh->jump_cmd_stderr = $pipes[2];
+		$ssh->jump_cmd_child = $child;
+		return $ssh;
 	}
 
 	/**
