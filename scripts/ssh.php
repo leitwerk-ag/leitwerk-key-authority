@@ -80,25 +80,25 @@ class SSH {
 			$ssh = self::build_connection($host, $port, $jumphosts);
 			$received_key = $ssh->getServerPublicHostKey();
 		} catch(SSHException | ErrorException $e) {
-			throw new SSHException("Failed to connect to ssh server", null, $e);
+			throw new SSHException("SSH connection failed");
 		}
 		if ($received_key === false) {
 			$err = "Could not receive host key from target server";
 			if ($ssh->jump_cmd_stderr !== null) {
 				$stderr = stream_get_contents($ssh->jump_cmd_stderr);
 				if ($stderr != "") {
-					$err = "The tunnel connection via one or more jumphosts failed: $stderr";
+					$err = "The tunnel connection via jumphost(s) failed";
 				}
 			}
 			throw new SSHException($err);
 		} else if ($host_key === null || $host_key === "") {
 			$host_key = $received_key;
 		} else if ($host_key != $received_key) {
-			throw new SSHException("SSH host key does not match");
+			throw new SSHException("SSH host key verification failed");
 		}
 		$key = PublicKeyLoader::load(file_get_contents("config/keys-sync"));
 		if (!$ssh->login($username, $key)) {
-			throw new SSHException("SSH pubkey authentication failed");
+			throw new SSHException("SSH authentication failed");
 		}
 		return new SSH($ssh);
 	}
