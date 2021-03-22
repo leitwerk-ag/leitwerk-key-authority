@@ -213,3 +213,7 @@ a:focus, a:hover {
 .ldap-treeview li {
 	list-style-type: none;
 }
+
+textarea {
+	resize: vertical;
+}
