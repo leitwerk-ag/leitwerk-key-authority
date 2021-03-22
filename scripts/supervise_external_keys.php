@@ -238,7 +238,7 @@ function add_entries(array &$entries, string $user, SSH $ssh, string $filename, 
 					'user' => $user,
 					'type' => $matches[2],
 					'key' => $matches[4],
-					'comment' => $matches[6],
+					'comment' => $matches[6] ?? "",
 				];
 				if (isset($keys_in_db_assoc[$entry['key']]) && $keys_in_db_assoc[$entry['key']]->status == 'denied') {
 					$keep_line = false;
