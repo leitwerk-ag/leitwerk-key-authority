@@ -246,7 +246,7 @@ function sync_server($id, $only_username = null, $preview = false) {
 		$server->sync_report('sync failure', 'SSH connection timed out');
 		$server->reschedule_sync_request();
 		report_all_accounts_failed($keyfiles);
-		exit(1);
+		exit(0);
 	});
 
 	echo date('c')." {$hostname}: Attempting to connect.\n";
