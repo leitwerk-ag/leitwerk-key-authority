@@ -135,6 +135,10 @@ $security_config = $this->get('security_config');
 					<dt>SSH host key collision</dt>
 					<dd>Your server has the same SSH host key as another server. This should be corrected by regenerating the SSH host keys on one or both of the affected servers.</dd>
 					<?php } ?>
+					<dt>Could not receive host key from target server</dt>
+					<dd>The TCP connection was successful, but for some unknown reason the target server host keys could not be received.</dd>
+					<dt>The tunnel connection via jumphost(s) failed</dt>
+					<dd>Somewhere on the tunnel over the configured jumphost(s) there was an error, so LKA was not able to connect to the target server.</dd>
 					<dt>SSH authentication failed</dt>
 					<dd>Although SSH key authority was able to connect to your server via SSH, it failed to log in.  See the guides for setting up <a data-toggle="collapse" data-parent="#help" href="#sync_setup">full account syncing</a> or <a data-toggle="collapse" data-parent="#help" href="#legacy_sync_setup">legacy root account syncing</a>.</dd>
 					<dt>SFTP subsystem failed</dt>
