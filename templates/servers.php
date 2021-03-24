@@ -92,7 +92,7 @@
 				<thead>
 					<tr>
 						<?php if($this->get('admin')) { ?>
-						<th></th>
+						<th><input type="checkbox" id="cb_all_servers"></th>
 						<?php } ?>
 						<th>Hostname</th>
 						<th>Config</th>
