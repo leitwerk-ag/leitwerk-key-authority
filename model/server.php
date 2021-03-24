@@ -155,8 +155,10 @@ class Server extends Record {
 	* Add the specified user or group as a leader of the server.
 	* This action is logged with a warning level as it is increasing an access level.
 	* @param Entity $entity user or group to add as leader
+	* @param bool $send_mail Specify if an email for this added leader should be created. True by default.
+	* @return bool True if the entity has been added as leader, false if it was already a leader.
 	*/
-	public function add_admin(Entity $entity) {
+	public function add_admin(Entity $entity, bool $send_mail = true): bool {
 		global $config;
 		if(is_null($this->id)) throw new BadMethodCallException('Server must be in directory before leaders can be added');
 		if(is_null($entity->entity_id)) throw new InvalidArgumentException('User or group must be in directory before it can be made leader');
@@ -164,7 +166,7 @@ class Server extends Record {
 		try {
 			$url = $config['web']['baseurl'].'/servers/'.urlencode($this->hostname);
 			$email = new Email;
-			$email->subject = "Administrator for {$this->hostname}";
+			$email->subject = "Leader for {$this->hostname}";
 			$email->add_cc($config['email']['report_address'], $config['email']['report_name']);
 			switch(get_class($entity)) {
 			case 'User':
@@ -190,11 +192,15 @@ class Server extends Record {
 			$stmt->close();
 			if($this->active_user->uid != 'import-script') {
 				$this->log($logmsg, LOG_WARNING);
-				$email->send();
+				if ($send_mail) {
+					$email->send();
+				}
 			}
+			return true;
 		} catch(mysqli_sql_exception $e) {
 			if($e->getCode() == 1062) {
-				// Duplicate entry - ignore
+				// Duplicate entry
+				return false;
 			} else {
 				throw $e;
 			}
@@ -206,8 +212,9 @@ class Server extends Record {
 	* This action is logged with a warning level as it means the removed user/group will no longer
 	* receive notifications for any changes done to this server.
 	* @param Entity $entity user or group to remove as leader
+	* @return bool True if the user or group has been removed as leader, false if it was not a leader.
 	*/
-	public function delete_admin(Entity $entity) {
+	public function delete_admin(Entity $entity): bool {
 		if(is_null($this->id)) throw new BadMethodCallException('Server must be in directory before leaders can be deleted');
 		if(is_null($entity->entity_id)) throw new InvalidArgumentException('User or group must be in directory before it can be removed as leader');
 		$entity_id = $entity->entity_id;
@@ -224,7 +231,9 @@ class Server extends Record {
 		$stmt = $this->database->prepare("DELETE FROM server_admin WHERE server_id = ? AND entity_id = ?");
 		$stmt->bind_param('dd', $this->id, $entity_id);
 		$stmt->execute();
+		$removed = $stmt->affected_rows == 1;
 		$stmt->close();
+		return $removed;
 	}
 
 	/**

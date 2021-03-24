@@ -83,13 +83,17 @@
 				</div>
 			</div>
 		</div>
+		<?php if($this->get('admin')) { ?>
 		<form action="/servers_bulk_action" method="post">
+		<?php } ?>
 			<?php out($this->get('active_user')->get_csrf_field(), ESC_NONE) ?>
 			<p><?php $total = count($this->get('servers')); out(number_format($total).' server'.($total == 1 ? '' : 's').' found')?></p>
 			<table class="table table-hover table-condensed">
 				<thead>
 					<tr>
+						<?php if($this->get('admin')) { ?>
 						<th></th>
+						<?php } ?>
 						<th>Hostname</th>
 						<th>Config</th>
 						<?php if($this->get('admin')) { ?>
@@ -118,9 +122,11 @@
 						}
 					?>
 					<tr>
+						<?php if($this->get('admin')) { ?>
 						<td>
 							<input type="checkbox" name="selected_servers[]" value="<?php out($server->hostname) ?>">
 						</td>
+						<?php } ?>
 						<td>
 							<a href="<?php outurl('/servers/'.urlencode($server->hostname)) ?>" class="server"><?php out($server->hostname) ?></a>
 							<?php if($server->pending_requests > 0 && $this->get('admin')) { ?>
@@ -170,8 +176,10 @@
 					<?php } ?>
 				</tbody>
 			</table>
+			<?php if($this->get('admin')) { ?>
 			<button type="submit" class="btn btn-primary">Perform a Bulk action on selected servers</button>
 		</form>
+		<?php } ?>
 	</div>
 	<?php if($this->get('admin')) { ?>
 	<div class="tab-pane fade" id="add">

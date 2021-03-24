@@ -27,6 +27,37 @@ abstract class Entity extends Record {
 	protected $table = 'entity';
 
 	/**
+	 * Load the entity, given by id, from the database. It might be a user,
+	 * group or server account.
+	 *
+	 * @param int $id The id of the entity to load
+	 * @return Entity An instance of User, Group or ServerAccount, or null if no entity with this id exists
+	 */
+	public static function load(int $id): ?Entity {
+		global $database;
+
+		$stmt = $database->prepare("SELECT type FROM entity WHERE id = ?");
+		$stmt->bind_param('d', $id);
+		$stmt->execute();
+		$result = $stmt->get_result();
+		$stmt->close();
+		if ($row = $result->fetch_assoc()) {
+			switch ($row['type']) {
+				case 'user':
+					return new User($id);
+				case 'group':
+					return new Group($id);
+				case 'server account':
+					return new ServerAccount($id);
+				default:
+					throw new Exception("This entity has an unknown type.");
+			}
+		} else {
+			return null;
+		}
+	}
+
+	/**
 	* Write event details to syslog and to entity_event table.
 	* @param array $details event paramaters to be logged
 	* @param int $level syslog priority as defined in http://php.net/manual/en/function.syslog.php
