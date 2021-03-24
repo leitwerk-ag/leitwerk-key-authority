@@ -510,3 +510,25 @@ $(function() {
 		createTreeview(trees[idx]);
 	});
 });
+
+// Manage "select-all" checkbox on /servers
+$(function() {
+	let select_all = $('#cb_all_servers');
+	if (select_all.length == 1) {
+		select_all = select_all[0];
+		let host_selects = $('[name=selected_servers\\[\\]]');
+		select_all.addEventListener("input", () => {
+			host_selects.each((i, sel) => {
+				sel.checked = select_all.checked;
+			});
+		});
+		function update_select_all_box() {
+			let all_checked = true;
+			host_selects.each((i, sel) => all_checked = all_checked && sel.checked);
+			select_all.checked = all_checked;
+		}
+		host_selects.each((i, sel) => {
+			sel.addEventListener("input", update_select_all_box);
+		});
+	}
+});
