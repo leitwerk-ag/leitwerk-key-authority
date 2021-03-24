@@ -1,6 +1,7 @@
 <?php
 ##
 ## Copyright 2013-2017 Opera Software AS
+## Modifications Copyright 2021 Leitwerk AG
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -38,6 +39,7 @@ $routes = array(
 	'/servers/{hostname}/accounts/{account}/sync_status' => 'serveraccount_sync_status',
 	'/servers/{hostname}/status.{format}' => 'server',
 	'/servers/{hostname}/sync_status' => 'server_sync_status',
+	'/servers_bulk_action' => 'servers_bulk_action',
 	'/tools' => 'tools',
 	'/users' => 'users',
 	'/users/{username}' => 'user',

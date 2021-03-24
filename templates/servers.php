@@ -83,87 +83,95 @@
 				</div>
 			</div>
 		</div>
-		<p><?php $total = count($this->get('servers')); out(number_format($total).' server'.($total == 1 ? '' : 's').' found')?></p>
-		<table class="table table-hover table-condensed">
-			<thead>
-				<tr>
-					<th>Hostname</th>
-					<th>Config</th>
-					<?php if($this->get('admin')) { ?>
-					<th>Leaders</th>
-					<?php } ?>
-					<th>Status</th>
-				</tr>
-			</thead>
-			<tbody>
-				<?php
-				foreach($this->get('servers') as $server) {
-					if($server->key_management != 'keys') {
-						$syncclass = '';
-					} else {
-						switch($server->sync_status) {
-						case 'not synced yet': $syncclass = 'warning'; break;
-						case 'sync failure':   $syncclass = 'danger';  break;
-						case 'sync success':   $syncclass = 'success'; break;
-						case 'sync warning':   $syncclass = 'warning'; break;
-						}
-					}
-					if($last_sync = $server->get_last_sync_event()) {
-						$sync_details = json_decode($last_sync->details)->value;
-					} else {
-						$sync_details = ucfirst($server->sync_status);
-					}
-				?>
-				<tr>
-					<td>
-						<a href="<?php outurl('/servers/'.urlencode($server->hostname)) ?>" class="server"><?php out($server->hostname) ?></a>
-						<?php if($server->pending_requests > 0 && $this->get('admin')) { ?>
-						<a href="<?php outurl('/servers/'.urlencode($server->hostname)) ?>"><span class="badge" title="Pending requests"><?php out(number_format($server->pending_requests)) ?></span></a>
+		<form action="/servers_bulk_action" method="post">
+			<?php out($this->get('active_user')->get_csrf_field(), ESC_NONE) ?>
+			<p><?php $total = count($this->get('servers')); out(number_format($total).' server'.($total == 1 ? '' : 's').' found')?></p>
+			<table class="table table-hover table-condensed">
+				<thead>
+					<tr>
+						<th></th>
+						<th>Hostname</th>
+						<th>Config</th>
+						<?php if($this->get('admin')) { ?>
+						<th>Leaders</th>
 						<?php } ?>
-					</td>
-					<td class="nowrap">
-						<?php
-						switch($server->key_management) {
-						case 'keys':
-							switch($server->authorization) {
-							case 'manual': out('Manual account management'); break;
-							case 'automatic LDAP': out('LDAP accounts - automatic'); break;
-							case 'manual LDAP': out('LDAP accounts - manual'); break;
+						<th>Status</th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php
+					foreach($this->get('servers') as $server) {
+						if($server->key_management != 'keys') {
+							$syncclass = '';
+						} else {
+							switch($server->sync_status) {
+							case 'not synced yet': $syncclass = 'warning'; break;
+							case 'sync failure':   $syncclass = 'danger';  break;
+							case 'sync success':   $syncclass = 'success'; break;
+							case 'sync warning':   $syncclass = 'warning'; break;
 							}
-							break;
-						case 'other': out('Managed by another system'); break;
-						case 'none': out('Unmanaged'); break;
-						case 'decommissioned': out('Decommissioned'); break;
 						}
-						?>
-					</td>
-					<?php if($this->get('admin')) { ?>
-					<?php if(is_null($server->admins)) { ?>
-					<td<?php if($server->key_management == 'keys') out(' class="danger"', ESC_NONE)?>>Server has no leaders</td>
-					<?php } else { ?>
-					<td>
-						<?php
-						$admins = explode(',', $server->admins);
-						$admin_list = '';
-						foreach($admins as $admin) {
-							$type = substr($admin, 0, 1);
-							$name = substr($admin, 2);
-							if($type == 'G') {
-								$admin_list .= '<span class="glyphicon glyphicon-list-alt"></span> ';
+						if($last_sync = $server->get_last_sync_event()) {
+							$sync_details = json_decode($last_sync->details)->value;
+						} else {
+							$sync_details = ucfirst($server->sync_status);
+						}
+					?>
+					<tr>
+						<td>
+							<input type="checkbox" name="selected_servers[]" value="<?php out($server->hostname) ?>">
+						</td>
+						<td>
+							<a href="<?php outurl('/servers/'.urlencode($server->hostname)) ?>" class="server"><?php out($server->hostname) ?></a>
+							<?php if($server->pending_requests > 0 && $this->get('admin')) { ?>
+							<a href="<?php outurl('/servers/'.urlencode($server->hostname)) ?>"><span class="badge" title="Pending requests"><?php out(number_format($server->pending_requests)) ?></span></a>
+							<?php } ?>
+						</td>
+						<td class="nowrap">
+							<?php
+							switch($server->key_management) {
+							case 'keys':
+								switch($server->authorization) {
+								case 'manual': out('Manual account management'); break;
+								case 'automatic LDAP': out('LDAP accounts - automatic'); break;
+								case 'manual LDAP': out('LDAP accounts - manual'); break;
+								}
+								break;
+							case 'other': out('Managed by another system'); break;
+							case 'none': out('Unmanaged'); break;
+							case 'decommissioned': out('Decommissioned'); break;
 							}
-							$admin_list .= hesc($name).', ';
-						}
-						$admin_list = substr($admin_list, 0, -2);
-						out($admin_list, ESC_NONE);
-						?>
-					</td>
+							?>
+						</td>
+						<?php if($this->get('admin')) { ?>
+						<?php if(is_null($server->admins)) { ?>
+						<td<?php if($server->key_management == 'keys') out(' class="danger"', ESC_NONE)?>>Server has no leaders</td>
+						<?php } else { ?>
+						<td>
+							<?php
+							$admins = explode(',', $server->admins);
+							$admin_list = '';
+							foreach($admins as $admin) {
+								$type = substr($admin, 0, 1);
+								$name = substr($admin, 2);
+								if($type == 'G') {
+									$admin_list .= '<span class="glyphicon glyphicon-list-alt"></span> ';
+								}
+								$admin_list .= hesc($name).', ';
+							}
+							$admin_list = substr($admin_list, 0, -2);
+							out($admin_list, ESC_NONE);
+							?>
+						</td>
+						<?php } ?>
+						<?php } ?>
+						<td class="<?php out($syncclass)?> nowrap"><?php if($server->key_management != 'none') out($sync_details) ?></td>
+					</tr>
 					<?php } ?>
-					<?php } ?>
-					<td class="<?php out($syncclass)?> nowrap"><?php if($server->key_management != 'none') out($sync_details) ?></td>
-				</tr>
-				<?php } ?>
-			</tbody>
-		</table>
+				</tbody>
+			</table>
+			<button type="submit" class="btn btn-primary">Perform a Bulk action on selected servers</button>
+		</form>
 	</div>
 	<?php if($this->get('admin')) { ?>
 	<div class="tab-pane fade" id="add">
