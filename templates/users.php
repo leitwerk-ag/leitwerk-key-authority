@@ -29,7 +29,7 @@
 		<tr<?php if(!$user->active) out(' class="text-muted"', ESC_NONE) ?>>
 			<td><a href="<?php outurl('/users/'.urlencode($user->uid))?>" class="user<?php if(!$user->active) out(' text-muted') ?>"><?php out($user->uid)?></a></td>
 			<td><?php out($user->name)?></td>
-			<td><?php out(number_format(count($user->list_public_keys())))?></td>
+			<td><?php out(number_format(count($user->list_public_keys(null, null, false))))?></td>
 		</tr>
 		<?php } ?>
 	</tbody>
