@@ -223,7 +223,7 @@
 			See <a href="<?php outurl('/help#sync_setup')?>" class="alert-link">the sync setup instructions</a> for how to set up the server for key synchronization.
 		</div>
 		<h3>Format</h3>
-		<p>The csv content must consist of 3 columns and not contain a headline.</p>
+		<p>The csv content must consist of 4 columns and not contain a headline.</p>
 		<p>Columns:</p>
 		<ol>
 			<li>The dns name of the server</li>
