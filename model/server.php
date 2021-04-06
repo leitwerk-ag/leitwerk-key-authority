@@ -771,7 +771,7 @@ class Server extends Record {
 	 * @return bool True if the hostname looks correct, false if not
 	 */
 	public static function hostname_valid(string $hostname): bool {
-		return preg_match("|^[a-zA-Z0-9\\-.\x80-\xff]+\$|", $hostname);
+		return preg_match("|^[a-zA-Z0-9\\-._\x80-\xff]+\$|", $hostname);
 	}
 
 	/**
