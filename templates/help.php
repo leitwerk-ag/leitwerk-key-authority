@@ -112,6 +112,14 @@ $security_config = $this->get('security_config');
 					<li>Tunnel through host1 to connect to host2.local on port 2222, authenticating as keys-sync</li>
 					<li>Tunnel through host1 and host2 to connect to the target server</li>
 				</ol>
+				<h3>Hostname alias</h3>
+				<p>Sometimes the target machine is not accessible from the last jumphost using its configured hostname, but using another name. In this case, an alias name can be specified using the following syntax:</p>
+				<code>keys-sync@jumphost.example.com -> aliasname.local</code>
+				<p>This will do the following:</p>
+				<ol>
+					<li>Connect from LKA to jumphost.example.com, authenticating as keys-sync</li>
+					<li>Tunnel through jumphost to connect to aliasname.local, and expecting to reach the target server there, regardless of its actual hostname</li>
+				</ol>
 			</div>
 		</div>
 	</div>

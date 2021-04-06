@@ -581,10 +581,13 @@ class Server extends Record {
 			throw new SSHException("Multiple hosts with same IP address");
 		}
 
+		$parsed_jumphosts = $this->parse_jumphosts();
+		$host_alias = $parsed_jumphosts["host_alias"];
+		$jumphosts = $parsed_jumphosts["jumphosts"];
 		$connection = SSH::connect_with_pubkey(
-			$this->hostname,
+			$host_alias ?? $this->hostname,
 			$this->port,
-			$this->parse_jumphosts(),
+			$jumphosts,
 			'keys-sync',
 			'config/keys-sync.pub',
 			'config/keys-sync',
@@ -779,7 +782,7 @@ class Server extends Record {
 	 */
 	public static function jumphosts_valid(string $jumphosts): bool {
 		$one_jumphost_regex = "[^@]+@[a-zA-Z0-9\\-.\x80-\xff]+(:[0-9]+)?";
-		return preg_match("|^($one_jumphost_regex(,$one_jumphost_regex)*)?\$|", $jumphosts);
+		return preg_match("|^($one_jumphost_regex(,$one_jumphost_regex)*)?( *-> *[a-zA-Z0-9\\-.\x80-\xff]+)?\$|", $jumphosts);
 	}
 
 	/**
@@ -789,22 +792,34 @@ class Server extends Record {
 	 * @return array Contains one entry per jumphost. Empty array, if there are no jumphosts.
 	 */
 	public function parse_jumphosts(): array {
-		if ($this->jumphosts == "") {
-			return [];
+		$jumphosts = $this->jumphosts;
+		if (preg_match("|^([^ >]*) *-> *([a-zA-Z0-9\\-.\x80-\xff]+)\$|", $jumphosts, $matches)) {
+			$jumphosts = $matches[1];
+			$host_alias = $matches[2];
+		} else {
+			$host_alias = null;
 		}
-		$parts = explode(",", $this->jumphosts);
-		return array_map(function($part) {
-			preg_match("|^([^@]+)@([a-zA-Z0-9\\-.\x80-\xff]+)(:([0-9]+))?\$|", $part, $matches);
-			$port = $matches[4] ?? "22";
-			if ($port == "") {
-				$port = 22;
-			}
-			return [
-				"user" => $matches[1],
-				"host" => $matches[2],
-				"port" => (int)$port,
-			];
-		}, $parts);
+		if ($jumphosts == "") {
+			$jumphost_list = [];
+		} else {
+			$parts = explode(",", $jumphosts);
+			$jumphost_list = array_map(function($part) {
+				preg_match("|^([^@]+)@([a-zA-Z0-9\\-.\x80-\xff]+)(:([0-9]+))?\$|", $part, $matches);
+				$port = $matches[4] ?? "22";
+				if ($port == "") {
+					$port = 22;
+				}
+				return [
+					"user" => $matches[1],
+					"host" => $matches[2],
+					"port" => (int)$port,
+				];
+			}, $parts);
+		}
+		return [
+			"host_alias" => $host_alias,
+			"jumphosts" => $jumphost_list,
+		];
 	}
 }
 
