@@ -283,7 +283,7 @@ function check_missing_file(SSH $ssh, string $filename, string &$error_string) {
 			$error_string .= "Failed to check if $filename exists: $stderr_output";
 		}
 	} catch (SSHException $e) {
-		throw new SSHException("Could not scan $filename", null, $e);
+		$error_string .= "Failed to check if $filename exists: {$e->getMessage()}\n";
 	}
 }
 

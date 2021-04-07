@@ -27,7 +27,7 @@ class SSHException extends Exception {}
  */
 class SSH {
 	/**
-	 * The ssh connection handle as given by ssh2_connect(). Must be set by the constructor.
+	 * The ssh connection handle, instance of phpseclib3\Net\SFTP. Must be set by the constructor.
 	 */
 	private $connection;
 
@@ -78,6 +78,7 @@ class SSH {
 	): SSH {
 		try {
 			$ssh = self::build_connection($host, $port, $jumphosts);
+			$ssh->connection->setKeepAlive(30);
 			$received_key = $ssh->connection->getServerPublicHostKey();
 		} catch(SSHException | ErrorException $e) {
 			throw new SSHException("SSH connection failed");
