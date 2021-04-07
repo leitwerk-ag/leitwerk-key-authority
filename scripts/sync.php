@@ -347,9 +347,7 @@ function sync_server($id, $only_username = null, $preview = false) {
 	} else {
 		$server->sync_report('sync success', 'Synced successfully');
 	}
-	if ($server->sync_status !== 'sync success' || $server->key_supervision_error === null) {
-		$server->update_status_file($connection);
-	}
+	$server->update_status_file($connection);
 	echo date('c')." {$hostname}: Sync finished\n";
 }
 
