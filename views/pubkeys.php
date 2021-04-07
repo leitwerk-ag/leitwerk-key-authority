@@ -76,7 +76,10 @@ if(isset($router->vars['format']) && $router->vars['format'] == 'json') {
 	$allowed_keys = array_filter($external_keys, function($key) { return $key->status == 'allowed'; });
 	$denied_keys = array_filter($external_keys, function($key) { return $key->status == 'denied'; });
 	$content->set('new_keys', $new_keys);
-	$content->set('supervise_errors', $server_dir->list_servers([], ['key_supervision_error' => 'not-null']));
+	$content->set('supervise_errors', $server_dir->list_servers([], [
+		'key_supervision_error' => 'not-null',
+		'key_management' => ['keys'],
+	]));
 	$content->set('allowed_keys', $allowed_keys);
 	$content->set('denied_keys', $denied_keys);
 
