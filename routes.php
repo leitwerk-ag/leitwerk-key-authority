@@ -30,6 +30,7 @@ $routes = array(
 	'/pubkeys.{format}' => 'pubkeys',
 	'/pubkeys/{key}' => 'pubkey',
 	'/pubkeys/{key}.{format}' => 'pubkey',
+	'/report' => 'report',
 	'/servers' => 'servers',
 	'/servers.{format}' => 'servers',
 	'/servers/{hostname}' => 'server',
