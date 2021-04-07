@@ -44,7 +44,7 @@ foreach ($servers as $server) {
 			// Empty error set is stored as null in database
 			$error_string = null;
 		}
-	} catch (Exception $e) {
+	} catch (Throwable $e) {
 		$error_string .= "Exception while reading keys of {$server->hostname}:\n  " . $e->getMessage() . "\n";
 	}
 	if ($error_string !== $server->key_supervision_error) {
@@ -54,8 +54,8 @@ foreach ($servers as $server) {
 	if ($ssh != null) {
 		try {
 			$server->update_status_file($ssh);
-		} catch (SSHException $e) {
-			// ignore
+		} catch (Throwable $e) {
+			// ignore - Monitoring will complain if status file is not updated
 		}
 	}
 }
