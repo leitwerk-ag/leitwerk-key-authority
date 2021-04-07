@@ -51,11 +51,7 @@ foreach ($servers as $server) {
 		$server->key_supervision_error = $error_string;
 		$server->update();
 	}
-	// Avoid false-negative message after a downtime
-	// If sync is on error state but key supervision succeeds, this may be because the
-	// target server recently recovered from downtime.
-	// In this case, no false-negative status file will be placed.
-	if ($ssh != null && ($server->key_supervision_error !== null || $server->sync_status === 'sync success')) {
+	if ($ssh != null) {
 		try {
 			$server->update_status_file($ssh);
 		} catch (SSHException $e) {
