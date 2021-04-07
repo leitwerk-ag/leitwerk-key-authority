@@ -190,11 +190,9 @@ class Server extends Record {
 			$stmt->bind_param('dd', $this->id, $entity_id);
 			$stmt->execute();
 			$stmt->close();
-			if($this->active_user->uid != 'import-script') {
-				$this->log($logmsg, LOG_WARNING);
-				if ($send_mail) {
-					$email->send();
-				}
+			$this->log($logmsg, LOG_WARNING);
+			if ($send_mail) {
+				$email->send();
 			}
 			return true;
 		} catch(mysqli_sql_exception $e) {
