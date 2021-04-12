@@ -16,6 +16,7 @@
 ##
 
 $content = new PageSection('report');
+$content->set('report', Report::create());
 
 $page = new PageSection('base');
 $page->set('title', 'Permissions report');
