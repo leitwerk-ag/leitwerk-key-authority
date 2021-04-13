@@ -42,4 +42,21 @@ class Format {
 		$linktext = hesc($user->uid);
 		return "<a href=\"$url\" class=\"$class\">$linktext</a>";
 	}
+
+	/**
+	 * Build an html link pointing to the account page of a given server account.
+	 * The result is already properly escaped.
+	 *
+	 * @param User $account ServerAccount instance to create a link for
+	 * @return string Html string for output
+	 */
+	public static function server_account_link(ServerAccount $account): string {
+		$url = hesc(rrurl('/servers/'.urlencode($account->server->hostname).'/accounts/'.urlencode($account->name)));
+		$linktext = hesc($account->name.'@'.$account->server->hostname);
+		$decommissioned_banner = "";
+		if ($account->server->key_management == 'decommissioned') {
+			$decommissioned_banner = ' <span class="label label-default">Inactive</span>';
+		}
+		return "<a href=\"$url\" class=\"serveraccount\">$linktext</a>$decommissioned_banner";
+	}
 }

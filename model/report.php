@@ -21,10 +21,12 @@
 class Report {
 	private $leaders_report;
 	private $access_report;
+	private $server_to_server_report;
 
-	private function __construct($leaders_report, $access_report) {
+	private function __construct($leaders_report, $access_report, $server_to_server_report) {
 		$this->leaders_report = $leaders_report;
 		$this->access_report = $access_report;
+		$this->server_to_server_report = $server_to_server_report;
 	}
 
 	/**
@@ -36,6 +38,7 @@ class Report {
 	public static function create(): Report {
 		global $server_dir;
 
+		// Server leader report
 		$servers = $server_dir->list_servers([], ['key_management' => ['keys']]);
 		$leaders_serverlist = [];
 		foreach ($servers as $server) {
@@ -58,6 +61,7 @@ class Report {
 		}
 		$leaders_report = group_entries($leaders_serverlist);
 
+		// User access rights
 		$access_serverlist = [];
 		foreach ($servers as $server) {
 			$access = new AccessRights();
@@ -66,9 +70,6 @@ class Report {
 			foreach ($accounts as $account) {
 				$permitted = get_permitted_users($account);
 				if (!empty($permitted)) {
-					usort($permitted, function($u1, $u2) {
-						return $u1->name <=> $u2->name;
-					});
 					$access->access_rights[$account->name] = $permitted;
 				}
 			}
@@ -77,7 +78,24 @@ class Report {
 		}
 		$access_report = group_entries($access_serverlist);
 
-		return new Report($leaders_report, $access_report);
+		// Server-to-Server accesses
+		$server_to_server_list = [];
+		foreach ($servers as $server) {
+			$access = new AccessRights();
+
+			$accounts = $server->list_accounts();
+			foreach ($accounts as $account) {
+				$permitted = get_permitted_accounts($account);
+				if (!empty($permitted)) {
+					$access->access_rights[$account->name] = $permitted;
+				}
+			}
+			ksort($access->access_rights);
+			$server_to_server_list[] = [$access, $server];
+		}
+		$server_to_server_report = group_entries($server_to_server_list);
+
+		return new Report($leaders_report, $access_report, $server_to_server_report);
 	}
 
 	public function get_leaders_report(): array {
@@ -86,6 +104,10 @@ class Report {
 
 	public function get_access_report(): array {
 		return $this->access_report;
+	}
+
+	public function get_server_to_server_report(): array {
+		return $this->server_to_server_report;
 	}
 }
 
@@ -125,14 +147,50 @@ class Leaders {
  * Each access is counted, even if restricted by options.
  *
  * @param ServerAccount $account The server account to find access rules for.
- * @return array List of user objects that are allowed to access.
+ * @return array List of User objects that are allowed to access.
  */
 function get_permitted_users(ServerAccount $account): array {
+	$accessors = get_accessors($account);
+	$users = array_filter($accessors, function($accessor) {
+		return get_class($accessor) == "User";
+	});
+	usort($users, function($u1, $u2) {
+		return $u1->name <=> $u2->name;
+	});
+	return $users;
+}
+
+/**
+ * Find all server accounts that are allowed to access the given server account by any rule.
+ * Each access is counted, even if restricted by options.
+ *
+ * @param ServerAccount $account The server account to find access rules for.
+ * @return array List of ServerAccount objects that are allowed to access.
+ */
+function get_permitted_accounts(ServerAccount $target): array {
+	$accessors = get_accessors($target);
+	$accounts = array_filter($accessors, function($accessor) {
+		return get_class($accessor) == "ServerAccount";
+	});
+	usort($accounts, function($a1, $a2) {
+		return [$a1->server->hostname, $a1->name] <=> [$a2->server->hostname, $a2->name];
+	});
+	return $accounts;
+}
+
+/**
+ * Find all users and server accounts that are allowed to access the given server
+ * account by any rule. Each access is counted, even if restricted by options.
+ *
+ * @param ServerAccount $account The server account to find access rules for.
+ * @return array List of User and ServerAccount objects that are allowed to access.
+ */
+function get_accessors(ServerAccount $account): array {
 	if (!$account->active || $account->sync_status == 'proposed') {
 		return [];
 	}
 	$accesses = $account->list_access();
-	$accessors = get_all_accessors($accesses);
+	$accessors = expand_accesses($accesses);
 
 	$groups = $account->list_group_membership();
 	foreach ($groups as $group) {
@@ -140,18 +198,12 @@ function get_permitted_users(ServerAccount $account): array {
 			continue;
 		}
 		$accesses = $group->list_access();
-		$accessors = array_merge($accessors, get_all_accessors($accesses));
+		$accessors = array_merge($accessors, expand_accesses($accesses));
 	}
-	$users = array_filter($accessors, function($accessor) {
-		return get_class($accessor) == "User";
+	remove_duplicates($accessors, function($accessor) {
+		return $accessor->entity_id;
 	});
-	remove_duplicates($users, function($user) {
-		return $user->entity_id;
-	});
-	usort($users, function($u1, $u2) {
-		return $u1->name <=> $u2->name;
-	});
-	return $users;
+	return $accessors;
 }
 
 /**
@@ -161,7 +213,7 @@ function get_permitted_users(ServerAccount $account): array {
  * @param array $accesses List of Access objects
  * @return array List of User and ServerAccount objects
  */
-function get_all_accessors(array $accesses): array {
+function expand_accesses(array $accesses): array {
 	$accessors = [];
 	foreach ($accesses as $access) {
 		$accessor = $access->source_entity;
@@ -199,7 +251,7 @@ function remove_duplicates(array &$a, callable $identity) {
 }
 
 /**
- * Contains a list of users that are allowed to access, for each individual
+ * Contains a list of users or server accounts that are allowed to access, for each individual
  * account name of one specific server.
  */
 class AccessRights {

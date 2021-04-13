@@ -16,6 +16,7 @@
 ##
 ?>
 <h1>Permissions report</h1>
+
 <h2>Server leaders</h2>
 <?php foreach($this->get('report')->get_leaders_report() as $group) { ?>
 <div class="panel panel-default">
@@ -60,6 +61,7 @@
 	</div>
 </div>
 <?php } ?>
+
 <h2>Access rights</h2>
 <?php foreach ($this->get('report')->get_access_report() as $access) { ?>
 <div class="panel panel-default">
@@ -78,6 +80,34 @@
 				<td>
 				<?php
 					$html_list = array_map("Format::user_link", $accessors);
+					echo implode(", ", $html_list);
+				?>
+				</td>
+			</tr>
+			<?php } ?>
+		</table>
+	</div>
+</div>
+<?php } ?>
+
+<h2>Server-to-Server accesses</h2>
+<?php foreach ($this->get('report')->get_server_to_server_report() as $access) { ?>
+<div class="panel panel-default">
+	<div class="panel-body">
+		<p>All of these servers ...<br>
+		<?php
+			$servers = $access[1];
+			$html_list = array_map("Format::server_link", $servers);
+			echo implode(", ", $html_list);
+		?>
+		<br>... can be accessed by the following other server accounts:</p>
+		<table class="table table-bordered">
+			<?php foreach ($access[0]->access_rights as $account_name => $accessors) { ?>
+			<tr>
+				<th><?php out($account_name) ?></th>
+				<td>
+				<?php
+					$html_list = array_map("Format::server_account_link", $accessors);
 					echo implode(", ", $html_list);
 				?>
 				</td>
