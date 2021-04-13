@@ -52,6 +52,9 @@ function server_list(array $servers, array $suffix = ["", ""]): string {
 					$html_list = array_map("Format::user_link", $server_leaders);
 					echo implode(", ", $html_list);
 				?>
+				<?php if (empty($group[0]->server_leaders)) { ?>
+				<em>There are currently no leaders assigned.</em>
+				<?php } ?>
 				</td>
 			</tr>
 			<?php if (!empty($group[0]->account_leaders)) { ?>
@@ -80,6 +83,7 @@ function server_list(array $servers, array $suffix = ["", ""]): string {
 <div class="panel panel-default">
 	<div class="panel-body">
 		<p><?php out(server_list($access[1], [" has", " have"]), ESC_NONE) ?> the following access rules:</p>
+		<?php if (!empty($access[0]->access_rights)) { ?>
 		<table class="table table-bordered">
 			<?php foreach ($access[0]->access_rights as $account_name => $accessors) { ?>
 			<tr>
@@ -93,6 +97,9 @@ function server_list(array $servers, array $suffix = ["", ""]): string {
 			</tr>
 			<?php } ?>
 		</table>
+		<?php } else { ?>
+		<em>Nobody is allowed to access</em>
+		<?php } ?>
 	</div>
 </div>
 <?php } ?>
@@ -102,6 +109,7 @@ function server_list(array $servers, array $suffix = ["", ""]): string {
 <div class="panel panel-default">
 	<div class="panel-body">
 		<p><?php out(server_list($access[1]), ESC_NONE) ?> can be accessed by the following other server accounts:</p>
+		<?php if (!empty($access[0]->access_rights)) { ?>
 		<table class="table table-bordered">
 			<?php foreach ($access[0]->access_rights as $account_name => $accessors) { ?>
 			<tr>
@@ -115,6 +123,9 @@ function server_list(array $servers, array $suffix = ["", ""]): string {
 			</tr>
 			<?php } ?>
 		</table>
+		<?php } else { ?>
+		<em>No other server accounts are allowed to access</em>
+		<?php } ?>
 	</div>
 </div>
 <?php } ?>
