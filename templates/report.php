@@ -14,6 +14,25 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 ##
+
+/**
+ * Output "The server ..." or "All of these servers ...<br>...<br>...",
+ * depending on singular, plural.
+ *
+ * @param array $servers The list containing one or more server
+ * @param array $suffix Optional tuple of two strings to append to the result [singular, plural]
+ * @return string List of servers with html link, text is already escaped
+ */
+function server_list(array $servers, array $suffix = ["", ""]): string {
+	$html_list = array_map("Format::server_link", $servers);
+	$row = implode(", ", $html_list);
+	if (count($servers) == 1) {
+		return "The server $row{$suffix[0]}";
+	} else {
+		return "All of these servers ...<br>$row<br>...{$suffix[1]}";
+	}
+}
+
 ?>
 <h1>Permissions report</h1>
 
@@ -21,13 +40,7 @@
 <?php foreach($this->get('report')->get_leaders_report() as $group) { ?>
 <div class="panel panel-default">
 	<div class="panel-body">
-		<p>All of these servers ...<br>
-		<?php
-			$servers = $group[1];
-			$html_list = array_map("Format::server_link", $servers);
-			echo implode(", ", $html_list);
-		?>
-		<br>... have the following leaders:</p>
+		<p><?php out(server_list($group[1], [" has", " have"]), ESC_NONE) ?> the following leaders:</p>
 		<table class="table table-bordered">
 			<tr>
 				<th colspan="2">Server leaders</th>
@@ -66,13 +79,7 @@
 <?php foreach ($this->get('report')->get_access_report() as $access) { ?>
 <div class="panel panel-default">
 	<div class="panel-body">
-		<p>All of these servers ...<br>
-		<?php
-			$servers = $access[1];
-			$html_list = array_map("Format::server_link", $servers);
-			echo implode(", ", $html_list);
-		?>
-		<br>... have the following access rules:</p>
+		<p><?php out(server_list($access[1], [" has", " have"]), ESC_NONE) ?> the following access rules:</p>
 		<table class="table table-bordered">
 			<?php foreach ($access[0]->access_rights as $account_name => $accessors) { ?>
 			<tr>
@@ -94,13 +101,7 @@
 <?php foreach ($this->get('report')->get_server_to_server_report() as $access) { ?>
 <div class="panel panel-default">
 	<div class="panel-body">
-		<p>All of these servers ...<br>
-		<?php
-			$servers = $access[1];
-			$html_list = array_map("Format::server_link", $servers);
-			echo implode(", ", $html_list);
-		?>
-		<br>... can be accessed by the following other server accounts:</p>
+		<p><?php out(server_list($access[1]), ESC_NONE) ?> can be accessed by the following other server accounts:</p>
 		<table class="table table-bordered">
 			<?php foreach ($access[0]->access_rights as $account_name => $accessors) { ?>
 			<tr>
