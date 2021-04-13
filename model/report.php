@@ -20,9 +20,11 @@
  */
 class Report {
 	private $leaders_report;
+	private $access_report;
 
-	private function __construct($leaders_report) {
+	private function __construct($leaders_report, $access_report) {
 		$this->leaders_report = $leaders_report;
+		$this->access_report = $access_report;
 	}
 
 	/**
@@ -55,11 +57,35 @@ class Report {
 			$leaders_serverlist[] = [$leaders, $server];
 		}
 		$leaders_report = group_entries($leaders_serverlist);
-		return new Report($leaders_report);
+
+		$access_serverlist = [];
+		foreach ($servers as $server) {
+			$access = new AccessRights();
+
+			$accounts = $server->list_accounts();
+			foreach ($accounts as $account) {
+				$permitted = get_permitted_users($account);
+				if (!empty($permitted)) {
+					usort($permitted, function($u1, $u2) {
+						return $u1->name <=> $u2->name;
+					});
+					$access->access_rights[$account->name] = $permitted;
+				}
+			}
+			ksort($access->access_rights);
+			$access_serverlist[] = [$access, $server];
+		}
+		$access_report = group_entries($access_serverlist);
+
+		return new Report($leaders_report, $access_report);
 	}
 
 	public function get_leaders_report(): array {
 		return $this->leaders_report;
+	}
+
+	public function get_access_report(): array {
+		return $this->access_report;
 	}
 }
 
@@ -91,6 +117,107 @@ class Leaders {
 			"leaders" => $leader_ids,
 			"account_leaders" => $account_leader_ids,
 		]);
+	}
+}
+
+/**
+ * Find all users that are allowed to access the given server account by any rule.
+ * Each access is counted, even if restricted by options.
+ *
+ * @param ServerAccount $account The server account to find access rules for.
+ * @return array List of user objects that are allowed to access.
+ */
+function get_permitted_users(ServerAccount $account): array {
+	if (!$account->active || $account->sync_status == 'proposed') {
+		return [];
+	}
+	$accesses = $account->list_access();
+	$accessors = get_all_accessors($accesses);
+
+	$groups = $account->list_group_membership();
+	foreach ($groups as $group) {
+		if (!$group->active) {
+			continue;
+		}
+		$accesses = $group->list_access();
+		$accessors = array_merge($accessors, get_all_accessors($accesses));
+	}
+	$users = array_filter($accessors, function($accessor) {
+		return get_class($accessor) == "User";
+	});
+	remove_duplicates($users, function($user) {
+		return $user->entity_id;
+	});
+	usort($users, function($u1, $u2) {
+		return $u1->name <=> $u2->name;
+	});
+	return $users;
+}
+
+/**
+ * Get all users and server accounts that are allowed to use one of the given accesses.
+ * There may be duplicates in the result.
+ *
+ * @param array $accesses List of Access objects
+ * @return array List of User and ServerAccount objects
+ */
+function get_all_accessors(array $accesses): array {
+	$accessors = [];
+	foreach ($accesses as $access) {
+		$accessor = $access->source_entity;
+		switch (get_class($accessor)) {
+			case 'User':
+			case 'ServerAccount':
+				$accessors[] = $accessor;
+				break;
+			case 'Group':
+				$accessors = array_merge($accessors, $accessor->list_members());
+				break;
+			default:
+				throw new Exception("Found an accessor that is not a user, server account or group.");
+		}
+	}
+	return $accessors;
+}
+
+/**
+ * Remove duplicate entries from the given array. Duplicates are detected, if the identity
+ * callback returns the same value.
+ *
+ * @param array $a The array to remove duplicates from
+ * @param callable $identity Function that produces an int or string for each array element.
+ */
+function remove_duplicates(array &$a, callable $identity) {
+	$result_map = [];
+	foreach ($a as $elem) {
+		$id = $identity($elem);
+		if (!isset($result_map[$id])) {
+			$result_map[$id] = $elem;
+		}
+	}
+	$a = array_values($result_map);
+}
+
+/**
+ * Contains a list of users that are allowed to access, for each individual
+ * account name of one specific server.
+ */
+class AccessRights {
+	public $access_rights = [];
+
+	/**
+	 * Create an index string that will be equal for identical access configurations
+	 * but unequal for different access configurations.
+	 *
+	 * @return string The generated index string
+	 */
+	public function identityString(): string {
+		$user_ids = array_map(function($account) {
+			return array_map(function($user) {
+				return $user->entity_id;
+			}, $account);
+		}, $this->access_rights);
+		return json_encode($user_ids);
 	}
 }
 
