@@ -44,22 +44,18 @@ foreach ($servers as $server) {
 			// Empty error set is stored as null in database
 			$error_string = null;
 		}
-	} catch (Exception $e) {
+	} catch (Throwable $e) {
 		$error_string .= "Exception while reading keys of {$server->hostname}:\n  " . $e->getMessage() . "\n";
 	}
 	if ($error_string !== $server->key_supervision_error) {
 		$server->key_supervision_error = $error_string;
 		$server->update();
 	}
-	// Avoid false-negative message after a downtime
-	// If sync is on error state but key supervision succeeds, this may be because the
-	// target server recently recovered from downtime.
-	// In this case, no false-negative status file will be placed.
-	if ($ssh != null && ($server->key_supervision_error !== null || $server->sync_status === 'sync success')) {
+	if ($ssh != null) {
 		try {
 			$server->update_status_file($ssh);
-		} catch (SSHException $e) {
-			// ignore
+		} catch (Throwable $e) {
+			// ignore - Monitoring will complain if status file is not updated
 		}
 	}
 }
@@ -287,7 +283,7 @@ function check_missing_file(SSH $ssh, string $filename, string &$error_string) {
 			$error_string .= "Failed to check if $filename exists: $stderr_output";
 		}
 	} catch (SSHException $e) {
-		throw new SSHException("Could not scan $filename", null, $e);
+		$error_string .= "Failed to check if $filename exists: {$e->getMessage()}\n";
 	}
 }
 

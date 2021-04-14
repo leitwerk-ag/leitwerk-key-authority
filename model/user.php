@@ -195,16 +195,14 @@ class User extends Entity {
 	public function add_public_key(PublicKey $key) {
 		global $active_user, $config;
 		parent::add_public_key($key);
-		if($active_user->uid != 'import-script') {
-			$url = $config['web']['baseurl'].'/pubkeys/'.urlencode($key->id);
-			$email = new Email;
-			$email->add_reply_to($config['email']['admin_address'], $config['email']['admin_name']);
-			$email->add_recipient($this->email, $this->name);
-			$email->add_cc($config['email']['report_address'], $config['email']['report_name']);
-			$email->subject = "A new SSH public key has been added to your account ({$this->uid})";
-			$email->body = "A new SSH public key has been added to your account on Leitwerk Key Authority.\n\nIf you added this key then all is well. If you do not recall adding this key, please contact {$config['email']['admin_address']} immediately.\n\n".$key->summarize_key_information();
-			$email->send();
-		}
+		$url = $config['web']['baseurl'].'/pubkeys/'.urlencode($key->id);
+		$email = new Email;
+		$email->add_reply_to($config['email']['admin_address'], $config['email']['admin_name']);
+		$email->add_recipient($this->email, $this->name);
+		$email->add_cc($config['email']['report_address'], $config['email']['report_name']);
+		$email->subject = "A new SSH public key has been added to your account ({$this->uid})";
+		$email->body = "A new SSH public key has been added to your account on Leitwerk Key Authority.\n\nIf you added this key then all is well. If you do not recall adding this key, please contact {$config['email']['admin_address']} immediately.\n\n".$key->summarize_key_information();
+		$email->send();
 		$this->log(array('action' => 'Pubkey add', 'value' => $key->fingerprint_md5), LOG_WARNING);
 	}
 
@@ -436,5 +434,52 @@ class User extends Entity {
 	* Implements the Entity::sync_access as a no-op as it makes no sense to grant access TO a user.
 	*/
 	public function sync_access() {
+	}
+
+	/**
+	 * Find all server accounts that this user has directly or indirectly been allowed to access.
+	 *
+	 * @return array List of ServerAccount objects
+	 */
+	public function find_accessible_server_accounts(): array {
+		// Put this user and groups where he is a member into one array
+		$sources = array_merge([$this], $this->list_group_memberships());
+
+		// Find all granted accesses of this user or its groups
+		$accesses = [];
+		foreach ($sources as $source) {
+			$accesses = array_merge($accesses, $source->list_remote_access());
+		}
+
+		// Collect access target (that can be server accounts and other groups)
+		$targets = array_map(function($access) {
+			return $access->dest_entity;
+		}, $accesses);
+
+		// Expand targets to the final account list (get members of the groups)
+		$target_accounts = [];
+		foreach ($targets as $target) {
+			switch (get_class($target)) {
+				case 'ServerAccount':
+					$target_accounts[] = $target;
+					break;
+				case 'Group':
+					$members = $target->list_members();
+					$member_accounts = array_filter($members, function($member) {
+						return $member instanceof ServerAccount;
+					});
+					$target_accounts = array_merge($target_accounts, $member_accounts);
+					break;
+				default:
+					throw new Exception("One accessible entity is neither a ServerAccount nor aGroup.");
+			}
+		}
+
+		// Filter out inactive accounts
+		$target_accounts = array_filter($target_accounts, function($account) {
+			return $account->server->key_management != 'decommissioned';
+		});
+
+		return $target_accounts;
 	}
 }

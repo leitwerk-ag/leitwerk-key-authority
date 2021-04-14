@@ -1,6 +1,7 @@
 <?php
 ##
 ## Copyright 2013-2017 Opera Software AS
+## Modifications Copyright 2021 Leitwerk AG
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -137,18 +138,16 @@ class ServerAccount extends Entity {
 	public function add_public_key(PublicKey $key) {
 		global $config;
 		parent::add_public_key($key);
-		if($this->active_user->uid != 'import-script') {
-			$url = $config['web']['baseurl'].'/pubkeys/'.urlencode($key->id);
-			$email = new Email;
-			$email->add_reply_to($config['email']['admin_address'], $config['email']['admin_name']);
-			foreach($this->server->list_effective_admins() as $admin) {
-				$email->add_recipient($admin->email, $admin->name);
-			}
-			$email->add_cc($config['email']['report_address'], $config['email']['report_name']);
-			$email->subject = "A new SSH public key has been added to the account {$this->name}@{$this->server->hostname} by {$this->active_user->uid}";
-			$email->body = "A new SSH public key has been added to the account {$this->name}@{$this->server->hostname} on Leitwerk Key Authority. The key was added by {$this->active_user->name} ({$this->active_user->uid}).\n\nIf this key was added without your knowledge, please contact {$config['email']['admin_address']} immediately.\n\n".$key->summarize_key_information();
-			$email->send();
+		$url = $config['web']['baseurl'].'/pubkeys/'.urlencode($key->id);
+		$email = new Email;
+		$email->add_reply_to($config['email']['admin_address'], $config['email']['admin_name']);
+		foreach($this->server->list_effective_admins() as $admin) {
+			$email->add_recipient($admin->email, $admin->name);
 		}
+		$email->add_cc($config['email']['report_address'], $config['email']['report_name']);
+		$email->subject = "A new SSH public key has been added to the account {$this->name}@{$this->server->hostname} by {$this->active_user->uid}";
+		$email->body = "A new SSH public key has been added to the account {$this->name}@{$this->server->hostname} on Leitwerk Key Authority. The key was added by {$this->active_user->name} ({$this->active_user->uid}).\n\nIf this key was added without your knowledge, please contact {$config['email']['admin_address']} immediately.\n\n".$key->summarize_key_information();
+		$email->send();
 		$this->log(array('action' => 'Pubkey add', 'value' => $key->fingerprint_md5), LOG_WARNING);
 	}
 
@@ -192,38 +191,36 @@ class ServerAccount extends Entity {
 			}
 			$account_admins = $this->list_admins();
 			$server_admins = $this->server->list_effective_admins();
-			if($this->active_user->uid != 'import-script') {
-				$email = new Email;
-				$email->add_reply_to($this->active_user->email, $this->active_user->name);
-				if(count($account_admins) == 0) {
-					foreach($server_admins as $admin) {
-						$email->add_recipient($admin->email, $admin->name);
-					}
-				} else {
-					foreach($account_admins as $admin) {
-						$email->add_recipient($admin->email, $admin->name);
-					}
-					foreach($server_admins as $admin) {
-						$email->add_cc($admin->email, $admin->name);
-					}
+			$email = new Email;
+			$email->add_reply_to($this->active_user->email, $this->active_user->name);
+			if(count($account_admins) == 0) {
+				foreach($server_admins as $admin) {
+					$email->add_recipient($admin->email, $admin->name);
 				}
-				$url = $config['web']['baseurl'].'/servers/'.urlencode($this->server->hostname).'/accounts/'.urlencode($this->name);
-				switch(get_class($entity)) {
-				case 'User':
-					$email->subject = "{$entity->uid} requests access to {$this->name}@{$this->server->hostname}";
-					$email->body = "{$entity->name} ({$entity->uid}) has requested access to {$this->name}@{$this->server->hostname}. View this request at <$url>";
-					break;
-				case 'ServerAccount':
-					$email->subject = "{$this->active_user->uid} requests {$entity->name}@{$entity->server->hostname} access to {$this->name}@{$this->server->hostname}";
-					$email->body = "{$this->active_user->name} ({$this->active_user->uid}) has requested that {$entity->name}@{$entity->server->hostname} have server-to-server access to {$this->name}@{$this->server->hostname}. View this request at <$url>";
-					break;
-				case 'Group':
-					$email->subject = "{$this->active_user->uid} requests {$entity->name} group access to {$this->name}@{$this->server->hostname}";
-					$email->body = "{$this->active_user->name} ({$this->active_user->uid}) has requested that the {$entity->name} group have access to {$this->name}@{$this->server->hostname}. View this request at <$url>";
-					break;
+			} else {
+				foreach($account_admins as $admin) {
+					$email->add_recipient($admin->email, $admin->name);
 				}
-				$email->send();
+				foreach($server_admins as $admin) {
+					$email->add_cc($admin->email, $admin->name);
+				}
 			}
+			$url = $config['web']['baseurl'].'/servers/'.urlencode($this->server->hostname).'/accounts/'.urlencode($this->name);
+			switch(get_class($entity)) {
+			case 'User':
+				$email->subject = "{$entity->uid} requests access to {$this->name}@{$this->server->hostname}";
+				$email->body = "{$entity->name} ({$entity->uid}) has requested access to {$this->name}@{$this->server->hostname}. View this request at <$url>";
+				break;
+			case 'ServerAccount':
+				$email->subject = "{$this->active_user->uid} requests {$entity->name}@{$entity->server->hostname} access to {$this->name}@{$this->server->hostname}";
+				$email->body = "{$this->active_user->name} ({$this->active_user->uid}) has requested that {$entity->name}@{$entity->server->hostname} have server-to-server access to {$this->name}@{$this->server->hostname}. View this request at <$url>";
+				break;
+			case 'Group':
+				$email->subject = "{$this->active_user->uid} requests {$entity->name} group access to {$this->name}@{$this->server->hostname}";
+				$email->body = "{$this->active_user->name} ({$this->active_user->uid}) has requested that the {$entity->name} group have access to {$this->name}@{$this->server->hostname}. View this request at <$url>";
+				break;
+			}
+			$email->send();
 		} catch(mysqli_sql_exception $e) {
 			if($e->getCode() == 1062) {
 				// Duplicate entry - ignore
@@ -347,27 +344,25 @@ class ServerAccount extends Entity {
 				$mailbody = "The {$entity->name} group has been granted access to {$this->name}@{$this->server->hostname} by {$this->active_user->name} ({$this->active_user->uid}). The changes will be synced to the server within a few seconds.";
 				break;
 			}
-			if($this->active_user->uid != 'import-script') {
-				$account_admins = $this->list_admins();
-				$server_admins = $this->server->list_effective_admins();
-				$email = new Email;
-				if(count($account_admins) == 0) {
-					foreach($server_admins as $admin) {
-						$email->add_recipient($admin->email, $admin->name);
-					}
-				} else {
-					foreach($account_admins as $admin) {
-						$email->add_recipient($admin->email, $admin->name);
-					}
-					foreach($server_admins as $admin) {
-						$email->add_cc($admin->email, $admin->name);
-					}
+			$account_admins = $this->list_admins();
+			$server_admins = $this->server->list_effective_admins();
+			$email = new Email;
+			if(count($account_admins) == 0) {
+				foreach($server_admins as $admin) {
+					$email->add_recipient($admin->email, $admin->name);
 				}
-				$email->add_cc($config['email']['report_address'], $config['email']['report_name']);
-				$email->subject = $mailsubject;
-				$email->body = $mailbody;
-				$email->send();
+			} else {
+				foreach($account_admins as $admin) {
+					$email->add_recipient($admin->email, $admin->name);
+				}
+				foreach($server_admins as $admin) {
+					$email->add_cc($admin->email, $admin->name);
+				}
 			}
+			$email->add_cc($config['email']['report_address'], $config['email']['report_name']);
+			$email->subject = $mailsubject;
+			$email->body = $mailbody;
+			$email->send();
 			foreach($access_options as $access_option) {
 				$access->add_option($access_option);
 			}

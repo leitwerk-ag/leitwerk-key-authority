@@ -1,6 +1,7 @@
 <?php
 ##
 ## Copyright 2013-2017 Opera Software AS
+## Modifications Copyright 2021 Leitwerk AG
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -35,6 +36,7 @@ class PageSection {
 		if($active_user && ($active_user->admin || count($active_user->list_admined_servers()) > 0)) {
 			$this->data->menu_items['/activity'] = 'Activity';
 		}
+		$this->data->menu_items['/report'] = 'Report';
 		if($active_user && $active_user->admin) {
 			$this->data->menu_items['/tools'] = 'Tools';
 		}

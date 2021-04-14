@@ -146,9 +146,7 @@ class Group extends Entity {
 			$stmt->execute();
 			$stmt->close();
 			$this->log($logmsg, LOG_WARNING, $actor);
-			if($actor->uid != 'import-script') {
-				$this->send_mail_addmember($entity, $actor);
-			}
+			$this->send_mail_addmember($entity, $actor);
 		} catch(mysqli_sql_exception $e) {
 			if($e->getCode() == 1062) {
 				// Duplicate entry - ignore
@@ -372,16 +370,14 @@ class Group extends Entity {
 				$mailbody = "The {$entity->name} group has been granted access to resources in the {$this->name} group by {$this->active_user->name} ({$this->active_user->uid}).";
 				break;
 			}
-			if($this->active_user->uid != 'import-script') {
-				$email = new Email;
-				foreach($this->list_admins() as $admin) {
-					$email->add_recipient($admin->email, $admin->name);
-				}
-				$email->add_cc($config['email']['report_address'], $config['email']['report_name']);
-				$email->subject = $mailsubject;
-				$email->body = $mailbody;
-				$email->send();
+			$email = new Email;
+			foreach($this->list_admins() as $admin) {
+				$email->add_recipient($admin->email, $admin->name);
 			}
+			$email->add_cc($config['email']['report_address'], $config['email']['report_name']);
+			$email->subject = $mailsubject;
+			$email->body = $mailbody;
+			$email->send();
 			foreach($access_options as $access_option) {
 				$access->add_option($access_option);
 			}

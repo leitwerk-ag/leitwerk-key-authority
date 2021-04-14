@@ -190,11 +190,9 @@ class Server extends Record {
 			$stmt->bind_param('dd', $this->id, $entity_id);
 			$stmt->execute();
 			$stmt->close();
-			if($this->active_user->uid != 'import-script') {
-				$this->log($logmsg, LOG_WARNING);
-				if ($send_mail) {
-					$email->send();
-				}
+			$this->log($logmsg, LOG_WARNING);
+			if ($send_mail) {
+				$email->send();
 			}
 			return true;
 		} catch(mysqli_sql_exception $e) {
@@ -771,7 +769,7 @@ class Server extends Record {
 	 * @return bool True if the hostname looks correct, false if not
 	 */
 	public static function hostname_valid(string $hostname): bool {
-		return preg_match("|^[a-zA-Z0-9\\-.\x80-\xff]+\$|", $hostname);
+		return preg_match("|^[a-zA-Z0-9\\-._\x80-\xff]+\$|", $hostname);
 	}
 
 	/**

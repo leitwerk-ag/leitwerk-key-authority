@@ -39,16 +39,17 @@ def collect_errors(status_info):
     errors = []
 
     if SCRIPT_VERSION < status_info["error_below_version"]:
-        errors += [(CRIT, "This checkscript (version " + str(SCRIPT_VERSION) + ") is outdated.")]
+        errors += [(CRIT, "This checkscript (version " + str(SCRIPT_VERSION) + ") is outdated. Please update the script on the affected machine.")]
         return errors
     elif SCRIPT_VERSION < status_info["warn_below_version"]:
-        errors += [(WARN, "This checkscript (version " + str(SCRIPT_VERSION) + ") is outdated.")]
+        errors += [(WARN, "This checkscript (version " + str(SCRIPT_VERSION) + ") is outdated. Please update the script on the affected machine.")]
 
     if status_info["sync_status"] != "sync success":
         if status_info["sync_status_message"] is None:
-            errors += [(CRIT, "The keys-sync status is '" + oneline(status_info["sync_status"]) + "'")]
+            message = ""
         else:
-            errors += [(CRIT, "The keys-sync status is '" + oneline(status_info["sync_status"]) + "': " + oneline(status_info["sync_status_message"]))]
+            message = ": " + oneline(status_info["sync_status_message"])
+        errors += [(CRIT, "The keys-sync status is '" + oneline(status_info["sync_status"]) + "'" + message + " - Please check the machine's error in the LKA web ui")]
 
     if status_info["key_supervision_error"] is not None:
         errors += [(CRIT, "Error supervising keys: " + oneline(status_info["key_supervision_error"]))]
@@ -57,13 +58,13 @@ def collect_errors(status_info):
     expired = calendar.timegm(exp_tup[0:6]) - exp_tup[9]
     curtime = time.time()
     if expired + 48*60*60 <= curtime:
-        errors += [(CRIT, "The keys-sync status is expired since more than 48 hours (Got no update from ssh-key-authority during this time)")]
+        errors += [(CRIT, "The keys-sync status has expired for more than 48 hours (Got no update from Leitwerk Key Authority during this time) - Please check the machine's error in the LKA web ui")]
     elif expired <= curtime:
-        errors += [(WARN, "The keys-sync status is expired (Got no update from ssh-key-authority before the expire-time was reached)")]
+        errors += [(WARN, "The keys-sync status has expired (Got no update from ssh-key-authority before the expire-time was reached) - Please check the machine's error in the LKA web ui")]
 
     if len(status_info["accounts_with_unnoticed_keys"]) > 0:
         account_list = "(" + ", ".join(status_info["accounts_with_unnoticed_keys"]) + ")"
-        errors += [(WARN, "There have been new external keys for at least 96 hours on following accounts: " + account_list)]
+        errors += [(WARN, "There have been new external keys for at least 96 hours on following accounts: " + account_list + " - Please allow or deny them in the LKA web ui.")]
 
     if len(errors) == 0:
         errors = [(OK, "The keys-sync status is OK and up-to-date")]
