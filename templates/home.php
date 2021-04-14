@@ -203,4 +203,17 @@
 	</tbody>
 </table>
 <?php } ?>
+<h2>Your allowed access</h2>
+<?php if (count($this->get('allowed_access')) > 0) { ?>
+<p>You are allowed (possibly via some groups) to access the following accounts:</p>
+<table class="table table-bordered">
+	<?php foreach ($this->get('allowed_access') as $account) { ?>
+	<tr>
+		<td><?php out(Format::server_account_link($account), ESC_NONE) ?></td>
+	</tr>
+	<?php } ?>
+</table>
+<?php } else { ?>
+<p><em>You are currently not allowed to access any accounts.</em></p>
+<?php } ?>
 <?php } ?>

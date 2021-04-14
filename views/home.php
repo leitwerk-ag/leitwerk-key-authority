@@ -48,6 +48,7 @@ if(isset($_POST['add_public_key'])) {
 	$content = new PageSection('home');
 	$content->set('user_keys', $public_keys);
 	$content->set('admined_servers', $admined_servers);
+	$content->set('allowed_access', $active_user->find_accessible_server_accounts());
 	$content->set('uid', $active_user->uid);
 }
 
