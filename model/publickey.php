@@ -176,33 +176,45 @@ class PublicKey extends Record {
 	}
 
 	/**
-	 * Provide the key in OpenSSH-text-format, but use 'username, creation date' as comment.
+	 * Provide the key in OpenSSH-text-format, but use 'username, creation date' as comment or leave it empty.
 	 *
 	 * @param User $owner Owner of this key, to display the name in the comment section
+	 * @param bool $set_comment True to set the comment as 'username, creation date', False to leave it empty.
 	 * @return string key in OpenSSH-text-format
 	 */
-	public function export_userkey_with_fixed_comment(User $owner) {
-		if ($this->creation_date === null) {
-			$date = '';
+	public function export_userkey_with_fixed_comment(User $owner, bool $set_comment) {
+		if ($set_comment) {
+			if ($this->creation_date === null) {
+				$date = '';
+			} else {
+				$date = ', ' . $this->creation_date;
+			}
+			$comment = " {$owner->name}{$date}";
 		} else {
-			$date = ', ' . $this->creation_date;
+			$comment = '';
 		}
-		return "{$this->type} {$this->keydata} {$owner->name}{$date}";
+		return "{$this->type} {$this->keydata}{$comment}";
 	}
 
 	/**
-	 * Provide the key in OpenSSH-text-format, but use 'username, creation date' as comment.
+	 * Provide the key in OpenSSH-text-format, but use 'account name, creation date' as comment or leave it empty.
 	 *
 	 * @param ServerAccount $owner Owner of this key, to display the name in the comment section
+	 * @param bool $set_comment True to set the comment as 'account name, creation date', False to leave it empty.
 	 * @return string key in OpenSSH-text-format
 	 */
-	public function export_serverkey_with_fixed_comment(ServerAccount $owner) {
-		if ($this->creation_date === null) {
-			$date = '';
+	public function export_serverkey_with_fixed_comment(ServerAccount $owner, bool $set_comment) {
+		if ($set_comment) {
+			if ($this->creation_date === null) {
+				$date = '';
+			} else {
+				$date = ', ' . $this->creation_date;
+			}
+			$comment = " {$owner->name}@{$owner->server->hostname}{$date}";
 		} else {
-			$date = ', ' . $this->creation_date;
+			$comment = '';
 		}
-		return "{$this->type} {$this->keydata} {$owner->name}@{$owner->server->hostname}{$date}";
+		return "{$this->type} {$this->keydata}{$comment}";
 	}
 
 	/**
