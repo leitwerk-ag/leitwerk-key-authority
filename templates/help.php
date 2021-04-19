@@ -230,23 +230,6 @@ $security_config = $this->get('security_config');
 	<div class="panel panel-default">
 		<div class="panel-heading">
 			<h3 class="panel-title">
-				<a data-toggle="collapse" data-parent="#help" href="#legacy_sync_setup">
-					How do I set up my server for legacy (root-only) sync?
-				</a>
-			</h3>
-		</div>
-		<div id="legacy_sync_setup" class="panel-collapse collapse">
-			<div class="panel-body">
-				<p class="alert alert-warning">While this sync method is simpler to set up, we recommend setting up <a data-toggle="collapse" data-parent="#help" href="#sync_setup">full account syncing</a> where possible.</p>
-				<p>Add the following to the <code>/root/.ssh/authorized_keys</code> file (create it if it does not exist):</p>
-				<pre><?php out($this->get('keys-sync-pubkey'))?></pre>
-				<p>The <code>/root</code> and <code>/root/.ssh</code> directories must be accessible <em>only by root</em>.</p>
-			</div>
-		</div>
-	</div>
-	<div class="panel panel-default">
-		<div class="panel-heading">
-			<h3 class="panel-title">
 				<a data-toggle="collapse" data-parent="#help" href="#grant_access">
 					How do I grant access to an account on my server?
 				</a>
