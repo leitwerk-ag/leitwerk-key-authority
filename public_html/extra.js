@@ -219,7 +219,7 @@ $(function() {
 				$('input:checkbox', form).val([]);
 				ao_command_value.val('');
 				ao_from_value.val('');
-				if(preset == 'command' || preset == 'dbbackup') {
+				if(preset == 'command' || preset == 'dbbackup' || preset == 'checkmk') {
 					ao_command_enabled.prop('checked', true);
 					ao_command_value.focus();
 					ao_noportfwd_enabled.prop('checked', true);
@@ -228,6 +228,8 @@ $(function() {
 				}
 				if(preset == 'dbbackup') {
 					ao_command_value.val('/usr/bin/innobackupex --slave-info --defaults-file=/etc/mysql/my.cnf /var/tmp');
+				} else if (preset == 'checkmk') {
+					ao_command_value.val('/usr/bin/check_mk_agent');
 				}
 			}
 			ao_update_disabled();
