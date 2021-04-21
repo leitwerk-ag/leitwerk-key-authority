@@ -113,8 +113,9 @@ class Group extends Entity {
 	* @todo remove nested group functionality
 	* @param Entity $entity to add as a group member
 	* @param User $actor The user who performs this action. In case of null, $this->active_user is assumed.
+	* @param bool $enforce_privilege Do not fail if privileges are missing. Uses for example while adding a new host.
 	*/
-	public function add_member(Entity $entity, User $actor = null) {
+	public function add_member(Entity $entity, User $actor = null, bool $enforce_privilege = false) {
 		if(is_null($this->entity_id)) throw new BadMethodCallException('Group must be in directory before members can be added');
 		if(is_null($entity->entity_id)) throw new InvalidArgumentException('Entity must be in directory before it can be added to a group');
 		$entity_id = $entity->entity_id;
@@ -127,14 +128,14 @@ class Group extends Entity {
 			break;
 		case 'ServerAccount':
 			// We should not allow adding server accounts to a group if the active user is not a leader of that server or server account
-			if(!$actor->admin && !$actor->admin_of($entity->server) && !$actor->admin_of($entity)) {
+			if(!$enforce_privilege && !$actor->admin && !$actor->admin_of($entity->server) && !$actor->admin_of($entity)) {
 				throw new InvalidArgumentException('Active user is not a leader of the specified server account');
 			}
 			$logmsg = array('action' => 'Member add', 'value' => "account:{$entity->name}@{$entity->server->hostname}");
 			break;
 		case 'Group':
 			// We should not allow adding groups to a group if the active user is not an admin of that group
-			if(!$actor->admin && !$actor->admin_of($entity)) {
+			if(!$enforce_privilege && !$actor->admin && !$actor->admin_of($entity)) {
 				throw new InvalidArgumentException('Active user is not an administrator of the specified group');
 			}
 			$logmsg = array('action' => 'Member add', 'value' => "group:{$entity->name}");

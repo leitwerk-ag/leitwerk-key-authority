@@ -303,7 +303,9 @@ class Server extends Record {
 				$group->system = 1;
 				$group_dir->add_group($group);
 			}
-			$group->add_member($account);
+			// Enforce privilege, so that a non-admin can add the default accounts
+			// to the relevant groups.
+			$group->add_member($account, null, true);
 		}
 	}
 

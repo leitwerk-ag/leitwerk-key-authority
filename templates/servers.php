@@ -17,17 +17,15 @@
 ##
 ?>
 <h1>Servers</h1>
-<?php if($this->get('admin')) { ?>
 <ul class="nav nav-tabs">
 	<li><a href="#list" data-toggle="tab">Server list</a></li>
 	<li><a href="#add" data-toggle="tab">Add server</a></li>
 	<li><a href="#add_bulk" data-toggle="tab">Add multiple servers</a></li>
 </ul>
-<?php } ?>
 
 <!-- Tab panes -->
 <div class="tab-content">
-	<div class="tab-pane fade<?php if(!$this->get('admin')) out(' in active') ?>" id="list">
+	<div class="tab-pane fade" id="list">
 		<h2 class="sr-only">Server list</h2>
 		<div class="panel-group">
 			<div class="panel panel-default">
@@ -181,7 +179,6 @@
 		</form>
 		<?php } ?>
 	</div>
-	<?php if($this->get('admin')) { ?>
 	<div class="tab-pane fade" id="add">
 		<h2 class="sr-only">Add server</h2>
 		<div class="alert alert-info">
@@ -244,5 +241,4 @@ host3.example.com,22,,ld_group4;leader2</pre>
 			<button type="submit" name="add_bulk" value="1" class="btn btn-primary">Add servers to key management</button>
 		</form>
 	</div>
-	<?php } ?>
 </div>
