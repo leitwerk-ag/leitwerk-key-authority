@@ -229,12 +229,12 @@ function add_entries(array &$entries, string $user, SSH $ssh, string $filename, 
 		$keep_line = true; // Set to false, if line needs to be deleted
 		// ignore empty lines and comments
 		if (trim($line) !== '' && substr($line, 0, 1) !== '#') {
-			if (preg_match('%^([^ ]+ )?((ssh|ecdsa)-[^ ]+) ([a-zA-Z0-9+/=]+)( (.*))?$%', $line, $matches)) {
+			if (preg_match('%^(([^ "]|"([^"\\\\]|\\\\+[^\\\\])*")+ )?((ssh|ecdsa)-[^ ]+) ([a-zA-Z0-9+/=]+)( (.*))?$%', $line, $matches)) {
 				$entry = [
 					'user' => $user,
-					'type' => $matches[2],
-					'key' => $matches[4],
-					'comment' => $matches[6] ?? "",
+					'type' => $matches[4],
+					'key' => $matches[6],
+					'comment' => $matches[8] ?? "",
 				];
 				if (isset($keys_in_db_assoc[$entry['key']]) && $keys_in_db_assoc[$entry['key']]->status == 'denied') {
 					$keep_line = false;
