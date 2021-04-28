@@ -155,7 +155,7 @@ function parse_user_entry(string $line) {
 function read_server_keys(Server $server, string &$error_string, SSH $connection, $keys_in_db_assoc) {
 	global $server_dir;
 
-	if (!external_keys_active($connection)) {
+	if ($server->key_scan == 'off' || !external_keys_active($connection)) {
 		return [];
 	}
 	$user_entries = $connection->file_get_lines("/etc/passwd");
@@ -167,10 +167,12 @@ function read_server_keys(Server $server, string &$error_string, SSH $connection
 	$keys = [];
 	try {
 		foreach ($user_entries as $user) {
-			$path = "{$user['home']}/.ssh/authorized_keys";
-			add_entries($keys, $user['user'], $connection, $path, $error_string, $keys_in_db_assoc);
-			$path .= '2';
-			add_entries($keys, $user['user'], $connection, $path, $error_string, $keys_in_db_assoc);
+			if ($server->key_scan == 'full' || $user['user'] == 'root') {
+				$path = "{$user['home']}/.ssh/authorized_keys";
+				add_entries($keys, $user['user'], $connection, $path, $error_string, $keys_in_db_assoc);
+				$path .= '2';
+				add_entries($keys, $user['user'], $connection, $path, $error_string, $keys_in_db_assoc);
+			}
 		}
 	} catch (Exception $e) {
 		throw new Exception("Could not parse external keys in $path:\n  " . $e->getMessage());

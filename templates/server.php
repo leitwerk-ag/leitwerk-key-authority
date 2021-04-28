@@ -319,6 +319,29 @@
 					</div>
 				</div>
 			</div>
+			<div class="form-group" id="supervision">
+				<label class="col-sm-2 control-label">Key supervision</label>
+				<div class="col-sm-10">
+					<div class="radio">
+						<label class="text-success">
+							<input type="radio" name="key_scan" value="full"<?php if($this->get('server')->key_scan == 'full') out(' checked') ?>>
+							Scan keys of root and all user accounts
+						</label>
+					</div>
+					<div class="radio">
+						<label>
+							<input type="radio" name="key_scan" value="rootonly"<?php if($this->get('server')->key_scan == 'rootonly') out(' checked') ?>>
+							Scan only keys of the root account, no other user accounts
+						</label>
+					</div>
+					<div class="radio">
+						<label>
+							<input type="radio" name="key_scan" value="off"<?php if($this->get('server')->key_scan == 'off') out(' checked') ?>>
+							Disabled - Do not scan any keys
+						</label>
+					</div>
+				</div>
+			</div>
 			<div class="form-group<?php if($this->get('server')->key_management != 'keys') out(' hide') ?>" id="authorization">
 				<label class="col-sm-2 control-label">Accounts</label>
 				<div class="col-sm-10">

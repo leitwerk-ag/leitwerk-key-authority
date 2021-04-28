@@ -171,6 +171,7 @@ $(function() {
 		function display_relevant_options() {
 			if($("input[name='key_management']:checked").val() == 'keys') {
 				$('#authorization').show('fast');
+				$('#supervision').show('fast');
 				if($("input[name='authorization']:checked").val() == 'manual') {
 					$('#ldap_access_options').hide('fast');
 				} else {
@@ -179,6 +180,7 @@ $(function() {
 			} else {
 				$('#authorization').hide('fast');
 				$('#ldap_access_options').hide('fast');
+				$('#supervision').hide('fast');
 			}
 		}
 
