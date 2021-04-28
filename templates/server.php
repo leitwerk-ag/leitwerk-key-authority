@@ -324,19 +324,19 @@
 				<div class="col-sm-10">
 					<div class="radio">
 						<label class="text-success">
-							<input type="radio" name="key_scan" value="full">
+							<input type="radio" name="key_scan" value="full"<?php if($this->get('server')->key_scan == 'full') out(' checked') ?>>
 							Scan keys of root and all user accounts
 						</label>
 					</div>
 					<div class="radio">
 						<label>
-							<input type="radio" name="key_scan" value="rootonly">
+							<input type="radio" name="key_scan" value="rootonly"<?php if($this->get('server')->key_scan == 'rootonly') out(' checked') ?>>
 							Scan only keys of the root account, no other user accounts
 						</label>
 					</div>
 					<div class="radio">
 						<label>
-							<input type="radio" name="key_scan" value="off">
+							<input type="radio" name="key_scan" value="off"<?php if($this->get('server')->key_scan == 'off') out(' checked') ?>>
 							Disabled - Do not scan any keys
 						</label>
 					</div>

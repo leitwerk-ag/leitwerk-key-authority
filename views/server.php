@@ -120,6 +120,7 @@ if(isset($_POST['sync']) && ($server_admin || $active_user->admin)) {
 		$server->jumphosts = $jumphosts;
 		$server->key_management = $_POST['key_management'];
 		$server->authorization = $_POST['authorization'];
+		$server->key_scan = $_POST['key_scan'];
 		try {
 			$server->update();
 			$alert = new UserAlert;
