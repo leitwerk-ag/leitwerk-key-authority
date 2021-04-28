@@ -83,6 +83,7 @@ switch(get_class($remote_entity)) {
 							<button type="button" class="btn btn-default btn-xs" data-preset="default">Default</button>
 							<button type="button" class="btn btn-default btn-xs" data-preset="command">Command</button>
 							<button type="button" class="btn btn-default btn-xs" data-preset="dbbackup">DB backup</button>
+							<button type="button" class="btn btn-default btn-xs" data-preset="checkmk">CheckMK</button>
 						</p>
 						<div class="checkbox">
 							<label><input type="checkbox" name="access_option[command][enabled]"<?php if(isset($options['command'])) out(' checked'); ?>> Specify command (<code>command=&quot;command&quot;</code>)</label>

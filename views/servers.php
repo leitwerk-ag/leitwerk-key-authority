@@ -144,7 +144,7 @@ function run_import(array $entries): array {
 	];
 }
 
-if(isset($_POST['add_server']) && ($active_user->admin)) {
+if(isset($_POST['add_server'])) {
 	$hostname = trim($_POST['hostname']);
 	if(!Server::hostname_valid($hostname)) {
 		$content = new PageSection('invalid_hostname');
@@ -190,7 +190,7 @@ if(isset($_POST['add_server']) && ($active_user->admin)) {
 			redirect('#add');
 		}
 	}
-} else if (isset($_POST['add_bulk']) && ($active_user->admin)) {
+} else if (isset($_POST['add_bulk'])) {
 	$csv_document = $_POST['import'];
 	$entries = prepare_import($csv_document, $errors);
 	$alert = new UserAlert;

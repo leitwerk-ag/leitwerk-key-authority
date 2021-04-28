@@ -171,6 +171,7 @@ $(function() {
 		function display_relevant_options() {
 			if($("input[name='key_management']:checked").val() == 'keys') {
 				$('#authorization').show('fast');
+				$('#supervision').show('fast');
 				if($("input[name='authorization']:checked").val() == 'manual') {
 					$('#ldap_access_options').hide('fast');
 				} else {
@@ -179,6 +180,7 @@ $(function() {
 			} else {
 				$('#authorization').hide('fast');
 				$('#ldap_access_options').hide('fast');
+				$('#supervision').hide('fast');
 			}
 		}
 
@@ -219,7 +221,7 @@ $(function() {
 				$('input:checkbox', form).val([]);
 				ao_command_value.val('');
 				ao_from_value.val('');
-				if(preset == 'command' || preset == 'dbbackup') {
+				if(preset == 'command' || preset == 'dbbackup' || preset == 'checkmk') {
 					ao_command_enabled.prop('checked', true);
 					ao_command_value.focus();
 					ao_noportfwd_enabled.prop('checked', true);
@@ -228,6 +230,8 @@ $(function() {
 				}
 				if(preset == 'dbbackup') {
 					ao_command_value.val('/usr/bin/innobackupex --slave-info --defaults-file=/etc/mysql/my.cnf /var/tmp');
+				} else if (preset == 'checkmk') {
+					ao_command_value.val('/usr/bin/check_mk_agent');
 				}
 			}
 			ao_update_disabled();
