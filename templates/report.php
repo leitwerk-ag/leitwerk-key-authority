@@ -36,7 +36,14 @@ function server_list(array $servers, array $suffix = ["", ""]): string {
 ?>
 <h1>Permissions report</h1>
 
-<h2>Server leaders</h2>
+<p>Content</p>
+<ol>
+	<li><a href="#server_leaders">Server leaders</a></li>
+	<li><a href="#access_rights">Access rights</a></li>
+	<li><a href="#server_to_server_accesses">Server-to-Server accesses</a></li>
+</ol>
+
+<h2 id="server_leaders">Server leaders</h2>
 <?php foreach($this->get('report')->get_leaders_report() as $group) { ?>
 <div class="panel panel-default">
 	<div class="panel-body">
@@ -78,7 +85,7 @@ function server_list(array $servers, array $suffix = ["", ""]): string {
 </div>
 <?php } ?>
 
-<h2>Access rights</h2>
+<h2 id="access_rights">Access rights</h2>
 <?php foreach ($this->get('report')->get_access_report() as $access) { ?>
 <div class="panel panel-default">
 	<div class="panel-body">
@@ -104,7 +111,7 @@ function server_list(array $servers, array $suffix = ["", ""]): string {
 </div>
 <?php } ?>
 
-<h2>Server-to-Server accesses</h2>
+<h2 id="server_to_server_accesses">Server-to-Server accesses</h2>
 <?php foreach ($this->get('report')->get_server_to_server_report() as $access) { ?>
 <div class="panel panel-default">
 	<div class="panel-body">
