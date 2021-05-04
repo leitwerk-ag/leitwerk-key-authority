@@ -82,11 +82,7 @@ def check_content(status_filename):
     # Find the most critical state
     final_state = max([e[0] for e in errors])
 
-    # Annotate messages with WARN: / CRIT:
-    annotation = ["OK: ", "WARN: ", "CRIT: "]
-    messages = [annotation[e[0]] + e[1] for e in errors]
-
-    return final_state, "; ".join(messages)
+    return final_state, "; ".join([e[1] for e in errors])
 
 try:
     status, info = check_content(status_filename)
