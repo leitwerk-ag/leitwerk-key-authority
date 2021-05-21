@@ -713,7 +713,6 @@ class Server extends Record {
 		}
 		$status_content = [
 			"warn_below_version" => 1,
-			"error_below_version" => 1,
 			"sync_status" => $this->sync_status,
 			"sync_status_message" => $sync_status_message,
 			"key_supervision_error" => $this->key_supervision_error,

@@ -323,6 +323,15 @@ class User extends Entity {
 					$this->active = intval($ldapuser[strtolower($config['ldap']['user_active'])] == $config['ldap']['user_active_true']);
 				} elseif(isset($config['ldap']['user_active_false'])) {
 					$this->active = intval($ldapuser[strtolower($config['ldap']['user_active'])] != $config['ldap']['user_active_false']);
+				} elseif (isset($config['ldap']['user_active_bitmask'])) {
+					// Microsoft Active Directory uses bitflags to store if a user is active
+					// https://docs.microsoft.com/troubleshoot/windows-server/identity/useraccountcontrol-manipulate-account-properties
+					if (preg_match('/^(!?)([0-9]+)$/', $config['ldap']['user_active_bitmask'], $groups)) {
+						$negated = $groups[1] == "!";
+						$mask = (int)$groups[2];
+						$bit_set = ((int)$ldapuser[strtolower($config['ldap']['user_active'])] & $mask) != 0;
+						$this->active = (int)($bit_set ^ $negated);
+					}
 				}
 			} else {
 				$this->active = 1;
