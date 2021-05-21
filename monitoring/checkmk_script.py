@@ -33,15 +33,11 @@ def oneline(s):
 def collect_errors(status_info):
     OK = 0
     WARN = 1
-    CRIT = 2
 
     SCRIPT_VERSION = 1
     errors = []
 
-    if SCRIPT_VERSION < status_info["error_below_version"]:
-        errors += [(CRIT, "This checkscript (version " + str(SCRIPT_VERSION) + ") is outdated. Please update the script on the affected machine.")]
-        return errors
-    elif SCRIPT_VERSION < status_info["warn_below_version"]:
+    if SCRIPT_VERSION < status_info["warn_below_version"]:
         errors += [(WARN, "This checkscript (version " + str(SCRIPT_VERSION) + ") is outdated. Please update the script on the affected machine.")]
 
     if status_info["sync_status"] != "sync success":
@@ -49,17 +45,15 @@ def collect_errors(status_info):
             message = ""
         else:
             message = ": " + oneline(status_info["sync_status_message"])
-        errors += [(CRIT, "The keys-sync status is '" + oneline(status_info["sync_status"]) + "'" + message + " - Please check the machine's error in the LKA web ui")]
+        errors += [(WARN, "The keys-sync status is '" + oneline(status_info["sync_status"]) + "'" + message + " - Please check the machine's error in the LKA web ui")]
 
     if status_info["key_supervision_error"] is not None:
-        errors += [(CRIT, "Error supervising keys: " + oneline(status_info["key_supervision_error"]))]
+        errors += [(WARN, "Error supervising keys: " + oneline(status_info["key_supervision_error"]))]
 
     exp_tup = email.utils.parsedate_tz(status_info["expire"])
     expired = calendar.timegm(exp_tup[0:6]) - exp_tup[9]
     curtime = time.time()
-    if expired + 48*60*60 <= curtime:
-        errors += [(CRIT, "The keys-sync status has expired for more than 48 hours (Got no update from Leitwerk Key Authority during this time) - Please check the machine's error in the LKA web ui")]
-    elif expired <= curtime:
+    if expired <= curtime:
         errors += [(WARN, "The keys-sync status has expired (Got no update from ssh-key-authority before the expire-time was reached) - Please check the machine's error in the LKA web ui")]
 
     if len(status_info["accounts_with_unnoticed_keys"]) > 0:
@@ -87,7 +81,7 @@ def check_content(status_filename):
 try:
     status, info = check_content(status_filename)
 except BaseException as e:
-    status = 2
+    status = 1
     info = "Check script failed to execute: " + oneline(str(e))
 
 print(str(status) + " keys_sync_status - " + info)
