@@ -196,7 +196,7 @@
 			</div>
 			<div class="form-group">
 				<label for="jumphosts">Jumphosts (<a href="<?php outurl('/help#jumphost_format')?>">format</a>)</label>
-				<input type="text" id="jumphosts" name="jumphosts" pattern="[^@]+@[a-zA-Z0-9\-.\u0080-\uffff]+(:[0-9]+)?(,[^@]+@[a-zA-Z0-9\-.\u0080-\uffff]+(:[0-9]+)?)*" class="form-control">
+				<input type="text" id="jumphosts" name="jumphosts" pattern="([^@ >]+@[a-zA-Z0-9\-.\u0080-\uffff]+(:[0-9]+)?(,[^@ >]+@[a-zA-Z0-9\-.\u0080-\uffff]+(:[0-9]+)?)*)?( *-> *[a-zA-Z0-9\-.\u0080-\uffff]+)?" class="form-control">
 			</div>
 			<div class="form-group">
 				<label for="server_admin">Leaders</label>
