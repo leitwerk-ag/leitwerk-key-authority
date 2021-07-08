@@ -28,6 +28,9 @@
 	<div class="tab-pane fade" id="list">
 		<h2 class="sr-only">Server list</h2>
 		<div class="panel-group">
+			<p><a href="<?php outurl('/servers.json') ?>" class="btn btn-default btn-xs">
+				<span class="glyphicon glyphicon-console"></span> JSON
+			</a></p>
 			<div class="panel panel-default">
 				<div class="panel-heading">
 					<h3 class="panel-title">

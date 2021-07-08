@@ -38,6 +38,9 @@ foreach($this->get('group_members') as $member) {
 <div class="tab-content">
 	<div class="tab-pane fade" id="members">
 		<h2 class="sr-only">Group members</h2>
+		<p><a href="<?php outurl('/groups/'.urlencode($this->get('group')->name).'/members.json') ?>" class="btn btn-default btn-xs">
+			<span class="glyphicon glyphicon-console"></span> JSON
+		</a></p>
 		<?php if(count($this->get('group_members')) == 0) { ?>
 		<p>No members have been added to this group yet.</p>
 		<?php } else { ?>

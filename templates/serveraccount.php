@@ -328,6 +328,14 @@ default: $sync_class = 'warning'; $sync_message = 'Not synced'; break;
 	<?php } ?>
 	<div class="tab-pane fade" id="pubkeys">
 		<h2 class="sr-only">Public keys</h2>
+		<p>
+			<a href="<?php outurl($this->data->relative_request_url.'/pubkeys.txt')?>" class="btn btn-default btn-xs">
+				<span class="glyphicon glyphicon-console"></span> TXT
+			</a>
+			<a href="<?php outurl($this->data->relative_request_url.'/pubkeys.json')?>" class="btn btn-default btn-xs">
+				<span class="glyphicon glyphicon-console"></span> JSON
+			</a>
+		</p>
 		<p class="alert alert-info">Keys added here will be used for <strong>outgoing</strong> connections <em>from</em> this account to any account that it has been granted remote access to.</p>
 		<p>Public keys can be added to an account to facilitate server-to-server access from it to other accounts.</p>
 		<?php if(count($this->get('pubkeys')) == 0) { ?>
