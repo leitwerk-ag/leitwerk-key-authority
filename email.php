@@ -94,7 +94,7 @@ class Email {
 			if(is_null($rcpt['name'])) {
 				$to[] = "$rcpt[email]";
 			} else {
-				$to[] = "$rcpt[name] <$rcpt[email]>";
+				$to[] = "\"$rcpt[name]\" <$rcpt[email]>";
 			}
 		}
 		if(count($this->reply_to) > 0) {
