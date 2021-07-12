@@ -32,6 +32,14 @@
 	<div class="tab-pane fade" id="details">
 		<h2 class="sr-only">Details</h2>
 		<h3><a href="<?php outurl('/users/'.urlencode($this->get('user')->uid).'/pubkeys')?>">Public keys</a></h3>
+		<p>
+			<a href="<?php outurl('/users/'.urlencode($this->get('user')->uid).'/pubkeys.txt') ?>" class="btn btn-default btn-xs">
+				<span class="glyphicon glyphicon-console"></span> TXT
+			</a>
+			<a href="<?php outurl('/users/'.urlencode($this->get('user')->uid).'/pubkeys.json') ?>" class="btn btn-default btn-xs">
+				<span class="glyphicon glyphicon-console"></span> JSON
+			</a>
+		</p>
 		<?php if(count($this->get('active_user_keys')) == 0) { ?>
 		<p><?php out($this->get('user')->name)?> has no active public keys.</p>
 		<?php } else { ?>

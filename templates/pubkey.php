@@ -48,6 +48,9 @@ $owner = $this->get('pubkey')->owner;
 <div class="tab-content">
 	<div class="tab-pane <?php if(!$this->get('user_is_owner') || $this->get('admin')) out(' active') ?>" id="info">
 		<h2 class="sr-only">Information</h2>
+		<p><a href="<?php outurl('/pubkeys/'.$this->get('pubkey')->id.'.json') ?>" class="btn btn-default btn-xs">
+			<span class="glyphicon glyphicon-console"></span> JSON
+		</a></p>
 		<?php if ($this->get('pubkey')->deletion_date !== null) { ?>
 			<div class="alert alert-danger">This key has been deleted</div>
 		<?php } ?>
