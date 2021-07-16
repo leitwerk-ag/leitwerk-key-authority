@@ -204,7 +204,7 @@
 			<div class="form-group">
 				<label for="server_admin">Leaders</label>
 				<input type="text" id="server_admins" name="admins" class="form-control hidden" required>
-				<input type="text" id="server_admin" name="admin" class="form-control" placeholder="Type user/group name and press 'Enter' key" list="adminlist">
+				<input type="text" id="server_admin" name="admin" class="form-control" placeholder="Type user/group name and press 'Enter' key" list="adminlist" required>
 				<datalist id="adminlist">
 					<?php foreach($this->get('all_users') as $user) { ?>
 					<option value="<?php out($user->uid)?>" label="<?php out($user->name)?>">
