@@ -94,3 +94,16 @@ foreach($users as $user) {
 	}
 }
 
+// Update group names
+$groups = $group_dir->list_groups();
+foreach ($groups as $group) {
+	if ($group->ldap_guid !== null) {
+		$group_ldap = $ldap->search($config['ldap']['dn_group'],
+				LDAP::escape($config['ldap']['group_num']).'='.LDAP::query_encode_guid($group->ldap_guid),
+				['name']);
+		if (!empty($group_ldap)) {
+			$group->name = $group_ldap[0]["name"];
+		}
+		$group->update();
+	}
+}
