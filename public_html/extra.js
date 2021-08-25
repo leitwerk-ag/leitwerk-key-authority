@@ -410,14 +410,17 @@ $(function() {
 			}
 			$("#server_admin").val("");
 			$("#server_admins").removeClass('hidden');
+			$("#server_admin").removeAttr("required");
 		}
 		$('input#server_admins').on('blur', function(event) {
 			if(!$("#server_admins").val()) {
 				$("#server_admins").addClass('hidden');
+				$("#server_admin").attr("required", "");
 			}
 		});
 		if($("#server_admins").val()) {
 			$("#server_admins").removeClass('hidden');
+			$("#server_admin").removeAttr("required");
 		}
 	});
 });

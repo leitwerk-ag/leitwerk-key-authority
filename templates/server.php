@@ -17,7 +17,6 @@
 ##
 ?>
 <h1><span class="glyphicon glyphicon-hdd" title="Server"></span> <?php out($this->get('server')->hostname)?><?php if($this->get('server')->key_management == 'decommissioned') out(' <span class="label label-default">Inactive</span>', ESC_NONE) ?></h1>
-<?php if($this->get('admin') || $this->get('server_admin')) { ?>
 <?php if($this->get('server')->key_management == 'keys') { ?>
 <form method="post" action="<?php outurl($this->data->relative_request_url)?>">
 	<?php out($this->get('active_user')->get_csrf_field(), ESC_NONE) ?>
@@ -74,6 +73,7 @@
 </div>
 <?php } ?>
 <?php } ?>
+<?php if($this->get('admin') || $this->get('server_admin')) { ?>
 <ul class="nav nav-tabs">
 	<li><a href="#accounts" data-toggle="tab">Accounts</a></li>
 	<li><a href="#admins" data-toggle="tab">Leaders</a></li>

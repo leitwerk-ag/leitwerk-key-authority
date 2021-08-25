@@ -177,6 +177,9 @@ default: $sync_class = 'warning'; $sync_message = 'Not synced'; break;
 			</table>
 		</form>
 		<?php } ?>
+		<div class="alert alert-info">
+			<strong>Note:</strong> Single access permissions (like in the following two rows) tend to be confusing. You might want to consider setting a group permission (like the last row) instead.<br>You could also group servers together and permit users to access the entire server group.
+		</div>
 		<form method="post" action="<?php outurl($this->data->relative_request_url)?>">
 			<?php out($this->get('active_user')->get_csrf_field(), ESC_NONE) ?>
 			<h4>Add user to account</h4>

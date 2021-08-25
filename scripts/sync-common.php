@@ -138,6 +138,7 @@ class SyncProcess {
 			if ($this->exit_status !== 0) {
 				$server = $server_dir->get_server_by_id($this->request->server_id);
 				$server->sync_report('sync failure', "Internal error during sync");
+				$server->reschedule_sync_request();
 				$server->update();
 			}
 			$sync_request_dir->delete_sync_request($this->request);

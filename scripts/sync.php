@@ -340,14 +340,20 @@ function sync_server($id, $only_username = null, $preview = false) {
 	} catch(SSHException $e) {
 		// If the /etc/uuid file does not exist, silently ignore
 	}
+	$failure_occurred = false;
 	if($cleanup_errors > 0) {
 		$server->sync_report('sync failure', 'Failed to clean up '.$cleanup_errors.' file'.($cleanup_errors == 1 ? '' : 's'));
+		$failure_occurred = true;
 	} elseif($account_errors > 0) {
 		$server->sync_report('sync failure', $account_errors.' account'.($account_errors == 1 ? '' : 's').' failed to sync');
+		$failure_occurred = true;
 	} elseif($sync_warning) {
 		$server->sync_report('sync warning', $sync_warning);
 	} else {
 		$server->sync_report('sync success', 'Synced successfully');
+	}
+	if ($failure_occurred) {
+		$server->reschedule_sync_request();
 	}
 	$server->update_status_file($connection);
 	echo date('c')." {$hostname}: Sync finished\n";

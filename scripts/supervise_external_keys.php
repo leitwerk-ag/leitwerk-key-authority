@@ -227,6 +227,7 @@ function add_entries(array &$entries, string $user, SSH $ssh, string $filename, 
 	$file_modified = false;
 	$new_filecontent = '';
 	$line_num = 1;
+	$removal_log = '';
 	foreach ($lines as $line) {
 		$keep_line = true; // Set to false, if line needs to be deleted
 		// ignore empty lines and comments
@@ -240,6 +241,7 @@ function add_entries(array &$entries, string $user, SSH $ssh, string $filename, 
 				];
 				if (isset($keys_in_db_assoc[$entry['key']]) && $keys_in_db_assoc[$entry['key']]->status == 'denied') {
 					$keep_line = false;
+					$removal_log .= date("c"). " $filename: Removed key with comment {$entry['comment']}\n";
 				}
 				$entries[] = $entry;
 			} else {
@@ -255,7 +257,8 @@ function add_entries(array &$entries, string $user, SSH $ssh, string $filename, 
 	}
 	if ($file_modified) {
 		try {
-		    $ssh->file_put_contents($filename, $new_filecontent);
+			$ssh->file_put_contents($filename, $new_filecontent);
+			echo $removal_log;
 		} catch (SSHException $e) {
 			$error_string .= "Removing 'denied' keys from $filename failed: {$e->getMessage()}\n";
 		}

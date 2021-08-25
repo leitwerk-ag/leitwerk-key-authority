@@ -18,7 +18,7 @@
 $web_config = $this->get('web_config');
 header('X-Frame-Options: DENY');
 header("Content-Security-Policy: default-src 'self'");
-$footer=str_replace("%v", "1.2.0", $web_config['footer']);
+$footer=str_replace("%v", "1.2.1", $web_config['footer']);
 ?>
 <!DOCTYPE html>
 <meta charset="utf-8"/>

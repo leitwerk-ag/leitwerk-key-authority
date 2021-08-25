@@ -38,7 +38,7 @@ $all_accounts = $server->list_accounts();
 $ldap_access_options = $server->list_ldap_access_options();
 $server_admin_can_reset_host_key = (isset($config['security']) && isset($config['security']['host_key_reset_restriction']) && $config['security']['host_key_reset_restriction'] == 0);
 
-if(isset($_POST['sync']) && ($server_admin || $active_user->admin)) {
+if(isset($_POST['sync'])) {
 	$server->sync_access();
 	redirect();
 } elseif(isset($_POST['add_admin']) && ($active_user->admin)) {
