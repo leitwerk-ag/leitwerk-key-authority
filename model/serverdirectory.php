@@ -29,13 +29,14 @@ class ServerDirectory extends DBDirectory {
 	public function add_server(Server $server) {
 		$hostname = $server->hostname;
 		$port = $server->port;
+		$key_scan = $server->key_scan;
 		$jumphosts = $server->jumphosts;
 		if (! Server::jumphosts_valid($jumphosts)) {
 			throw new InvalidJumphostsException();
 		}
 		try {
-			$stmt = $this->database->prepare("INSERT INTO server SET hostname = ?, port = ?, jumphosts = ?");
-			$stmt->bind_param('sds', $hostname, $port, $jumphosts);
+			$stmt = $this->database->prepare("INSERT INTO server SET hostname = ?, port = ?, key_scan = ?, jumphosts = ?");
+			$stmt->bind_param('sdss', $hostname, $port, $key_scan, $jumphosts);
 			$stmt->execute();
 			$server->id = $stmt->insert_id;
 			$stmt->close();

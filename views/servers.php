@@ -113,6 +113,26 @@ function user_or_group_by_name(string $name): ?Entity {
 }
 
 /**
+ * Read the setting default_key_supervision from the config, but map invalid
+ * values to the default value "full".
+ *
+ * @return string "full", "rootonly" or "off"
+ */
+function default_key_scan_setting(): string {
+	global $config;
+
+	$setting = $config["general"]["default_key_supervision"];
+	if ($setting == "") {
+		// "off" is mapped to an empty string by the ini parser
+		return "off";
+	} else if ($setting === "rootonly") {
+		return "rootonly";
+	} else {
+		return "full";
+	}
+}
+
+/**
  * Import multiple servers based on the data, that has been prepared.
  *
  * @param array $entries Prepared data: array of server entries
@@ -127,6 +147,7 @@ function run_import(array $entries): array {
 		$server = new Server;
 		$server->hostname = $entry['hostname'];
 		$server->port = $entry['port'];
+		$server->key_scan = default_key_scan_setting();
 		$server->jumphosts = $entry['jumphosts'];
 		try {
 			$server_dir->add_server($server);
@@ -164,6 +185,7 @@ if(isset($_POST['add_server'])) {
 			$server = new Server;
 			$server->hostname = $hostname;
 			$server->port = $_POST['port'];
+			$server->key_scan = default_key_scan_setting();
 			$server->jumphosts = $_POST['jumphosts'];
 			try {
 				$server_dir->add_server($server);
