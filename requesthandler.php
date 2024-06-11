@@ -20,8 +20,8 @@ require('core.php');
 ob_start();
 set_exception_handler('exception_handler');
 
-if(isset($_SERVER['PHP_AUTH_USER'])) {
-	$active_user = $user_dir->get_user_by_uid($_SERVER['PHP_AUTH_USER']);
+if(isset($_SERVER['AUTHENTICATE_UID'])) {
+	$active_user = $user_dir->get_user_by_uid($_SERVER['AUTHENTICATE_UID']);
 } else {
 	throw new Exception("Not logged in.");
 }
