@@ -373,7 +373,7 @@ class User extends Entity {
 	public function update_group_memberships() {
 		global $group_dir;
 		foreach ($group_dir->get_sys_groups() as $sys_group) {
-			$should_be_member = $this->active && in_array(strtolower($sys_group->ldap_guid), $this->get_ldap_group_guids());
+			$should_be_member = $this->active && in_array($sys_group->ldap_guid, $this->get_ldap_group_guids());
 			if ($should_be_member && !$this->member_of($sys_group)) {
 				// Use the keys-sync user as actor, because this is an automatic process
 				$sys_group->add_member($this, User::get_keys_sync_user());

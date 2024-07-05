@@ -15,7 +15,8 @@
 ## limitations under the License.
 ##
 
-chdir(dirname(__FILE__));
+$base_path = dirname(__FILE__);
+chdir($base_path);
 mb_internal_encoding('UTF-8');
 date_default_timezone_set('UTC');
 set_error_handler('exception_error_handler');
@@ -25,9 +26,7 @@ require('pagesection.php');
 
 $config_file = 'config/config.ini';
 if(file_exists($config_file)) {
-	$config_sample = parse_ini_file('config/config-sample.ini', true);
-	$config_custom = parse_ini_file($config_file, true);
-	$config = array_replace_recursive($config_sample, $config_custom);
+	$config = parse_ini_file($config_file, true);
 } else {
 	throw new Exception("Config file $config_file does not exist.");
 }
@@ -116,6 +115,7 @@ define('ESC_NONE', 9);
 * @param integer $escaping method of escaping to use
 */
 function out($string, $escaping = ESC_HTML) {
+	if (is_null($string)) return '';
 	switch($escaping) {
 	case ESC_HTML:
 		echo htmlspecialchars($string);
@@ -158,6 +158,7 @@ function outurl($url) {
  * @return string HTML-escaped string
  */
 function hesc($string) {
+	if (is_null($string)) return '';
 	return htmlspecialchars($string);
 }
 

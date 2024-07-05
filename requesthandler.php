@@ -20,14 +20,13 @@ require('core.php');
 ob_start();
 set_exception_handler('exception_handler');
 
-if(isset($_SERVER['PHP_AUTH_USER'])) {
-	$active_user = $user_dir->get_user_by_uid($_SERVER['PHP_AUTH_USER']);
+if(isset($_SERVER['AUTHENTICATE_SAMACCOUNTNAME'])) {
+	$active_user = $user_dir->get_user_by_uid($_SERVER['AUTHENTICATE_SAMACCOUNTNAME']);
 } else {
 	throw new Exception("Not logged in.");
 }
 
 // Work out where we are on the server
-$base_path = dirname(__FILE__);
 $base_url = dirname($_SERVER['SCRIPT_NAME']);
 $request_url = $_SERVER['REQUEST_URI'];
 $relative_request_url = preg_replace('/^'.preg_quote($base_url, '/').'/', '/', $request_url);
